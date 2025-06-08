@@ -130,8 +130,17 @@ class GridTradingONNXPredictor:
     
     def predict_live_mt5(self, symbol="EURUSD", timeframe=mt5.TIMEFRAME_H1, bars=100):
         """Make predictions on live MT5 data"""
+        try:
+            import MetaTrader5 as mt5
+        except ImportError:
+            print("MetaTrader5 package not found. Skipping live prediction.")
+            return None
+
         if not mt5.initialize():
-            raise RuntimeError("Failed to initialize MT5")
+            print("Failed to initialize MT5. Skipping live prediction.")
+            print(f"Error: {mt5.last_error()}")
+            print("Please ensure the MetaTrader 5 terminal is running and you are logged in.")
+            return None
         
         try:
             # Get recent data
@@ -154,7 +163,7 @@ class GridTradingONNXPredictor:
             print(f"Price: {latest['close']:.5f}")
             print(f"Grid Opportunity: {'YES' if latest['grid_opportunity'] == 1 else 'NO'}")
             print(f"Confidence: {latest['grid_probability']:.3f}")
-            
+
             return results
             
         finally:
@@ -214,7 +223,8 @@ def demo_predictions():
         print("\n2. Testing with live MT5 data...")
         try:
             live_results = predictor.predict_live_mt5("EURUSD", mt5.TIMEFRAME_H1, 100)
-            print("✓ Live prediction successful")
+            if live_results is not None:
+                print("✓ Live prediction successful")
         except Exception as e:
             print(f"Live prediction failed: {e}")
         
@@ -235,7 +245,9 @@ def main():
         elif command == "live":
             symbol = sys.argv[2] if len(sys.argv) > 2 else "EURUSD"
             predictor = GridTradingONNXPredictor()
-            predictor.predict_live_mt5(symbol)
+            results = predictor.predict_live_mt5(symbol)
+            if results is None:
+                print("Could not retrieve live data.")
         elif command == "file":
             if len(sys.argv) < 3:
                 print("Usage: python onnx_inference.py file <file_path> [symbol]")

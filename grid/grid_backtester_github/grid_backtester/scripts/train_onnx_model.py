@@ -192,61 +192,69 @@ class GridTradingModelTrainer:
         return X, y
     
     def train_model(self, X, y, model_type='random_forest'):
-        """Train the machine learning model"""
-        print(f"Training {model_type} model...")
-        
+        """Train the machine learning model with hyperparameter tuning"""
+        print(f"Training {model_type} model with GridSearchCV...")
+
         # Split data
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=0.2, random_state=42, stratify=y
         )
-        
+
         # Scale features
         X_train_scaled = self.scaler.fit_transform(X_train)
         X_test_scaled = self.scaler.transform(X_test)
-        
-        # Choose model
+
+        # Hyperparameter grid for RandomForest
         if model_type == 'random_forest':
-            self.model = RandomForestClassifier(
-                n_estimators=100,
-                max_depth=10,
-                min_samples_split=5,
-                min_samples_leaf=2,
-                random_state=42,
-                n_jobs=-1
-            )
+            param_grid = {
+                'n_estimators': [100, 200, 300],
+                'max_depth': [10, 20, 30, None],
+                'min_samples_split': [2, 5, 10],
+                'min_samples_leaf': [1, 2, 4],
+                'class_weight': ['balanced']
+            }
+            base_model = RandomForestClassifier(random_state=42, n_jobs=-1)
+            print("Starting GridSearchCV for RandomForest...")
+            grid = GridSearchCV(base_model, param_grid, cv=3, scoring='f1', n_jobs=-1, verbose=2)
+            grid.fit(X_train_scaled, y_train)
+            self.model = grid.best_estimator_
+            print(f"Best RandomForest params: {grid.best_params_}")
         elif model_type == 'gradient_boosting':
-            self.model = GradientBoostingClassifier(
-                n_estimators=100,
-                max_depth=6,
-                learning_rate=0.1,
-                random_state=42
-            )
-        
-        # Train model
-        self.model.fit(X_train_scaled, y_train)
-        
+            param_grid = {
+                'n_estimators': [100, 200],
+                'max_depth': [6, 10, None],
+                'learning_rate': [0.05, 0.1, 0.2]
+            }
+            base_model = GradientBoostingClassifier(random_state=42)
+            grid = GridSearchCV(base_model, param_grid, cv=3, scoring='f1', n_jobs=-1, verbose=1)
+            grid.fit(X_train_scaled, y_train)
+            self.model = grid.best_estimator_
+            print(f"Best GradientBoosting params: {grid.best_params_}")
+        else:
+            raise ValueError("Unsupported model_type")
+
         # Evaluate
         train_score = self.model.score(X_train_scaled, y_train)
         test_score = self.model.score(X_test_scaled, y_test)
-        
+
         print(f"✓ Training accuracy: {train_score:.3f}")
         print(f"✓ Test accuracy: {test_score:.3f}")
-        
+
         # Detailed evaluation
         y_pred = self.model.predict(X_test_scaled)
         print("\nClassification Report:")
         print(classification_report(y_test, y_pred))
-        
+
         # Feature importance
         if hasattr(self.model, 'feature_importances_'):
             feature_importance = pd.DataFrame({
                 'feature': self.feature_names,
                 'importance': self.model.feature_importances_
             }).sort_values('importance', ascending=False)
-            
+
             print("\nTop 10 Most Important Features:")
             print(feature_importance.head(10).to_string(index=False))
-        
+
         return X_test_scaled, y_test, y_pred
     
     def export_to_onnx(self, output_path="models/grid_trading_model.onnx"):
@@ -262,11 +270,12 @@ class GridTradingModelTrainer:
         # Define input type
         initial_type = [('float_input', FloatTensorType([None, len(self.feature_names)]))]
         
-        # Convert to ONNX
+        # Convert to ONNX (force tensor outputs for MQL5 compatibility)
         onnx_model = convert_sklearn(
             self.model, 
             initial_types=initial_type,
-            target_opset=11
+            target_opset=11,
+            options={'zipmap': False}
         )
         
         # Save ONNX model
