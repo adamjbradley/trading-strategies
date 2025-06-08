@@ -1,0 +1,19 @@
+
+version: "3.8"
+
+services:
+  backtest:
+    build:
+      context: .
+    container_name: grid_backtest
+    command: python grid_backtester/src/run_backtest.py
+    volumes:
+      - .:/app
+
+  mt5_data:
+    image: python:3.10
+    container_name: mt5_data_fetcher
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: python grid_backtester/scripts/download_data.py
