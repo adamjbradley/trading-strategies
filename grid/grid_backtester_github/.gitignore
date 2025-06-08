@@ -84,8 +84,6 @@ ehthumbs.db
 Thumbs.db
 
 # Trading specific
-*.ex4
-*.ex5
 *.mq4
 *.mq5
 backtest_results/
