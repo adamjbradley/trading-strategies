@@ -1,7 +1,10 @@
 import asyncio
 import aiohttp
 import pandas as pd
+import yfinance as yf
 from datetime import datetime
+
+from .data_loader import normalize_symbol
 
 def parse_date(ts, fmt="%Y-%m-%d %H:%M:%S"):
     return datetime.strptime(ts, fmt)
@@ -21,13 +24,35 @@ async def fetch_twelve_data(session, symbol, api_key, interval="1min", outputsiz
     } for d in reversed(values)])
 
 async def fetch_polygon_data(session, symbol, api_key, interval="minute", limit=500):
-    url = f"https://api.polygon.io/v2/aggs/ticker/C:{symbol}/range/1/{interval}/2023-01-01/2023-12-31?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
+    symbol_clean = normalize_symbol(symbol)
+    url = (
+        "https://api.polygon.io/v2/aggs/ticker/C:"
+        f"{symbol_clean}/range/1/{interval}/2023-01-01/2023-12-31"
+        f"?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
+    )
     data = await fetch_json(session, url)
     results = data.get("results", [])
-    return pd.DataFrame([{
-        "timestamp": datetime.fromtimestamp(d["t"] / 1000),
-        "open": d["o"], "high": d["h"], "low": d["l"], "close": d["c"], "volume": d["v"]
-    } for d in results])
+    return pd.DataFrame([
+        {
+            "timestamp": datetime.fromtimestamp(d["t"] / 1000),
+            "open": d["o"],
+            "high": d["h"],
+            "low": d["l"],
+            "close": d["c"],
+            "volume": d["v"],
+        }
+        for d in results
+    ])
+
+async def fetch_yfinance(symbol, interval="1m", period="1y"):
+    """Fetch data from Yahoo Finance using a thread executor."""
+    loop = asyncio.get_event_loop()
+    df = await loop.run_in_executor(None, lambda: yf.download(symbol, interval=interval, period=period, progress=False))
+    if df.empty:
+        return pd.DataFrame()
+    df = df.reset_index()
+    df.rename(columns={"Datetime": "timestamp", "Date": "timestamp", "Open": "open", "High": "high", "Low": "low", "Close": "close", "Adj Close": "close", "Volume": "volume"}, inplace=True)
+    return df[["timestamp", "open", "high", "low", "close", "volume"]]
 
 async def fetch_all_data(symbols, provider, api_key, **kwargs):
     async with aiohttp.ClientSession() as session:
@@ -37,5 +62,7 @@ async def fetch_all_data(symbols, provider, api_key, **kwargs):
                 tasks.append(fetch_twelve_data(session, symbol, api_key, **kwargs))
             elif provider == "polygon":
                 tasks.append(fetch_polygon_data(session, symbol, api_key, **kwargs))
+            elif provider == "yfinance":
+                tasks.append(fetch_yfinance(symbol, **kwargs))
         results = await asyncio.gather(*tasks)
         return dict(zip(symbols, results))

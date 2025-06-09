@@ -1,14 +1,32 @@
 import os
 import requests
 import pandas as pd
+import yfinance as yf
 from datetime import datetime
+
+# Normalize symbols like "EUR/USD" -> "EURUSD" for providers such as Polygon
+def normalize_symbol(symbol: str) -> str:
+    """Return an uppercase symbol without separator characters."""
+    return symbol.replace('/', '').upper()
 
 # Utility: parse date and convert to datetime
 def parse_date(ts, fmt="%Y-%m-%d %H:%M:%S"):
     return datetime.strptime(ts, fmt)
 
+def _resolve_key(key: str, env_var: str) -> str:
+    """Return the given key or fall back to an environment variable."""
+    return key if key and not key.startswith("YOUR_") else os.getenv(env_var, "")
+
+
 def load_polygon_data(symbol, api_key, interval="minute", limit=500):
-    url = f"https://api.polygon.io/v2/aggs/ticker/C:{symbol}/range/1/{interval}/2023-01-01/2023-12-31?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
+    """Load data from Polygon for a currency pair or metal symbol."""
+    api_key = _resolve_key(api_key, "POLYGON_API_KEY")
+    symbol_clean = normalize_symbol(symbol)
+    url = (
+        "https://api.polygon.io/v2/aggs/ticker/C:"
+        f"{symbol_clean}/range/1/{interval}/2023-01-01/2023-12-31"
+        f"?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
+    )
     resp = requests.get(url)
     data = resp.json().get("results", [])
     return pd.DataFrame([{
@@ -55,6 +73,28 @@ def load_tiingo(symbol, api_key, limit=500):
         "timestamp": parse_date(d["date"]),
         "open": d["open"], "high": d["high"], "low": d["low"], "close": d["close"], "volume": d.get("volume", 0)
     } for d in data])
+
+
+def load_yfinance(symbol, interval="1m", period="1y"):
+    """Load data from Yahoo Finance."""
+    df = yf.download(symbol, interval=interval, period=period, progress=False)
+    if df.empty:
+        return pd.DataFrame()
+    df = df.reset_index()
+    df.rename(
+        columns={
+            "Datetime": "timestamp",
+            "Date": "timestamp",
+            "Open": "open",
+            "High": "high",
+            "Low": "low",
+            "Close": "close",
+            "Adj Close": "close",
+            "Volume": "volume",
+        },
+        inplace=True,
+    )
+    return df[["timestamp", "open", "high", "low", "close", "volume"]]
 
 def save_optimized(df, symbol, provider):
     symbol_clean = symbol.replace('/', '').upper()

@@ -6,7 +6,7 @@ outputsize: 500
 
 api_keys:
   twelvedata: "your_twelvedata_api_key"
-  polygon: "zeuU2BFDSMmmPdjMkoK7p81wyBPFh1i0"
+  polygon: "YOUR_POLYGON_API_KEY"  # or set POLYGON_API_KEY env var
   alphavantage: "your_alpha_vantage_api_key"
   currencystack: "your_currencystack_api_key"
   tiingo: "your_tiingo_api_key"
