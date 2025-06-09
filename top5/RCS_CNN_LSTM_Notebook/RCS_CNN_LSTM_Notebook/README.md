@@ -44,6 +44,7 @@ a `/` (e.g. `EURUSD` or `EUR/USD`). The data loaders automatically normalize
 the symbol for Polygon's API. For the `yfinance` provider, append `=X` to
 currency pairs (e.g. `EURUSD=X`).
 
+
 ## 🔁 Feature Engineering
 Supports:
 - Technical indicators

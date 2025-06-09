@@ -19,7 +19,6 @@ def _resolve_key(key: str, env_var: str) -> str:
 
 
 def load_polygon_data(symbol, api_key, interval="minute", limit=500):
-    """Load data from Polygon for a currency pair or metal symbol."""
     api_key = _resolve_key(api_key, "POLYGON_API_KEY")
     symbol_clean = normalize_symbol(symbol)
     url = (
