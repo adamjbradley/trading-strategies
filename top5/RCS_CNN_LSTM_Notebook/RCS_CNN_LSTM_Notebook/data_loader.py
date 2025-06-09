@@ -121,3 +121,39 @@ def load_or_fetch(symbol, provider, loader_func, api_key, force_refresh=False, *
     df = loader_func(symbol, api_key, **kwargs)
     save_optimized(df, symbol, provider)
     return df
+
+def assess_quality(df):
+    """Print basic quality metrics for a DataFrame."""
+    if df.empty:
+        print("⚠️ DataFrame is empty")
+        return {}
+    stats = {
+        "rows": len(df),
+        "missing": df.isna().sum().to_dict(),
+        "duplicates": int(df.duplicated().sum()),
+    }
+    if "timestamp" in df.columns:
+        df_sorted = df.sort_values("timestamp")
+        stats["start"] = df_sorted["timestamp"].iloc[0]
+        stats["end"] = df_sorted["timestamp"].iloc[-1]
+    print("=== Data Quality ===")
+    for k, v in stats.items():
+        print(f"{k}: {v}")
+    return stats
+
+
+def compare_dataframes(df_a, df_b, name_a="A", name_b="B"):
+    """Compare two dataframes on timestamp overlap and close price similarity."""
+    if df_a.empty or df_b.empty:
+        print("One of the dataframes is empty; cannot compare.")
+        return
+    merged = pd.merge(df_a, df_b, on="timestamp", suffixes=(f"_{name_a}", f"_{name_b}"))
+    if merged.empty:
+        print("No overlapping timestamps for comparison")
+        return
+    corr = merged[f"close_{name_a}"].corr(merged[f"close_{name_b}"])
+    diff = (merged[f"close_{name_a}"] - merged[f"close_{name_b}"]).abs().mean()
+    print(f"Correlation ({name_a} vs {name_b}): {corr:.4f}")
+    print(f"Mean absolute close difference: {diff:.6f}")
+    return {"correlation": corr, "mean_abs_diff": diff}
+
