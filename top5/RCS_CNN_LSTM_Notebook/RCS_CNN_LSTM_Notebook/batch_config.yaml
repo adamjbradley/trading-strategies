@@ -1,0 +1,17 @@
+- use_async: true
+  symbol: "EUR/USD"
+  provider: "twelvedata"
+  interval: "1min"
+  outputsize: 100
+  api_keys:
+    twelvedata: "your_twelvedata_api_key"
+    polygon: "your_polygon_api_key"
+
+- use_async: true
+  symbol: "XAU/USD"
+  provider: "polygon"
+  interval: "minute"
+  outputsize: 200
+  api_keys:
+    twelvedata: "your_twelvedata_api_key"
+    polygon: "your_polygon_api_key"

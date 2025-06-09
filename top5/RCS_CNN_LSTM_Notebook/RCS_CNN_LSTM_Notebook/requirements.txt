@@ -1,0 +1,8 @@
+streamlit
+pandas
+matplotlib
+numpy
+onnxruntime
+tsfresh
+shap
+scikit-learn

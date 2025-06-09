@@ -1,0 +1,84 @@
+import os
+import requests
+import pandas as pd
+from datetime import datetime
+
+# Utility: parse date and convert to datetime
+def parse_date(ts, fmt="%Y-%m-%d %H:%M:%S"):
+    return datetime.strptime(ts, fmt)
+
+def load_polygon_data(symbol, api_key, interval="minute", limit=500):
+    url = f"https://api.polygon.io/v2/aggs/ticker/C:{symbol}/range/1/{interval}/2023-01-01/2023-12-31?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
+    resp = requests.get(url)
+    data = resp.json().get("results", [])
+    return pd.DataFrame([{
+        "timestamp": datetime.fromtimestamp(d["t"] / 1000),
+        "open": d["o"], "high": d["h"], "low": d["l"], "close": d["c"], "volume": d["v"]
+    } for d in data])
+
+def load_twelve_data(symbol, api_key, interval="1min", outputsize=500):
+    url = f"https://api.twelvedata.com/time_series?symbol={symbol}&interval={interval}&outputsize={outputsize}&apikey={api_key}"
+    resp = requests.get(url)
+    data = resp.json().get("values", [])
+    return pd.DataFrame([{
+        "timestamp": parse_date(d["datetime"]),
+        "open": float(d["open"]), "high": float(d["high"]),
+        "low": float(d["low"]), "close": float(d["close"]), "volume": float(d.get("volume", 0))
+    } for d in reversed(data)])
+
+def load_alpha_vantage(symbol, api_key, interval="1min"):
+    url = f"https://www.alphavantage.co/query?function=FX_INTRADAY&from_symbol={symbol[:3]}&to_symbol={symbol[3:]}&interval={interval}&apikey={api_key}&outputsize=compact"
+    resp = requests.get(url)
+    time_series = resp.json().get(f"Time Series FX ({interval})", {})
+    return pd.DataFrame([{
+        "timestamp": parse_date(ts),
+        "open": float(d["1. open"]), "high": float(d["2. high"]),
+        "low": float(d["3. low"]), "close": float(d["4. close"]), "volume": 0
+    } for ts, d in sorted(time_series.items())])
+
+def load_currencystack(symbol, api_key):
+    url = f"https://api.currencystack.io/forex?base={symbol[:3]}&target={symbol[3:]}&apikey={api_key}"
+    resp = requests.get(url)
+    data = resp.json()
+    return pd.DataFrame([{
+        "timestamp": datetime.now(),
+        "open": data["rate"], "high": data["rate"], "low": data["rate"],
+        "close": data["rate"], "volume": 0
+    }])
+
+def load_tiingo(symbol, api_key, limit=500):
+    headers = {"Content-Type": "application/json", "Authorization": f"Token {api_key}"}
+    url = f"https://api.tiingo.com/tiingo/fx/{symbol}/prices?resampleFreq=1min&limit={limit}"
+    resp = requests.get(url, headers=headers)
+    data = resp.json()
+    return pd.DataFrame([{
+        "timestamp": parse_date(d["date"]),
+        "open": d["open"], "high": d["high"], "low": d["low"], "close": d["close"], "volume": d.get("volume", 0)
+    } for d in data])
+
+def save_optimized(df, symbol, provider):
+    symbol_clean = symbol.replace('/', '').upper()
+    filename = f"data/{provider}_{symbol_clean}"
+    df.to_parquet(f"{filename}.parquet", index=False)
+    df.to_hdf(f"{filename}.h5", key='df', mode='w')
+    print(f"📦 Saved to {filename}.parquet and {filename}.h5")
+
+def load_or_fetch(symbol, provider, loader_func, api_key, force_refresh=False, **kwargs):
+    import os
+    symbol_clean = symbol.replace('/', '').upper()
+    base_path = f"data/{provider}_{symbol_clean}"
+    parquet_path = f"{base_path}.parquet"
+    h5_path = f"{base_path}.h5"
+
+    if not force_refresh:
+        if os.path.exists(parquet_path):
+            print(f"✅ Loaded cached data from {parquet_path}")
+            return pd.read_parquet(parquet_path)
+        elif os.path.exists(h5_path):
+            print(f"✅ Loaded cached data from {h5_path}")
+            return pd.read_hdf(h5_path)
+
+    print(f"🔄 Fetching fresh data from {provider} API")
+    df = loader_func(symbol, api_key, **kwargs)
+    save_optimized(df, symbol, provider)
+    return df
