@@ -1,5 +1,8 @@
 *.zip
 
+# Ignore MetaTrader compiled binaries
+*.ex5
+
 # Ignore Python cache directories
 __pycache__/
 .ipynb_checkpoints/
