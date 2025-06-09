@@ -6,3 +6,4 @@ onnxruntime
 tsfresh
 shap
 scikit-learn
+yfinance
