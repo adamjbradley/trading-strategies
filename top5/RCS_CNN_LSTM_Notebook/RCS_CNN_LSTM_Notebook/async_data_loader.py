@@ -3,6 +3,8 @@ import aiohttp
 import pandas as pd
 from datetime import datetime
 
+from .data_loader import normalize_symbol
+
 def parse_date(ts, fmt="%Y-%m-%d %H:%M:%S"):
     return datetime.strptime(ts, fmt)
 
@@ -21,7 +23,12 @@ async def fetch_twelve_data(session, symbol, api_key, interval="1min", outputsiz
     } for d in reversed(values)])
 
 async def fetch_polygon_data(session, symbol, api_key, interval="minute", limit=500):
-    url = f"https://api.polygon.io/v2/aggs/ticker/C:{symbol}/range/1/{interval}/2023-01-01/2023-12-31?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
+    symbol_clean = normalize_symbol(symbol)
+    url = (
+        "https://api.polygon.io/v2/aggs/ticker/C:"
+        f"{symbol_clean}/range/1/{interval}/2023-01-01/2023-12-31"
+        f"?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
+    )
     data = await fetch_json(session, url)
     results = data.get("results", [])
     return pd.DataFrame([{

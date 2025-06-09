@@ -39,6 +39,10 @@ label_horizon: 10
 label_method: binary
 ```
 
+When using the Polygon provider, currency pairs may be written with or without
+a `/` (e.g. `EURUSD` or `EUR/USD`). The data loaders automatically normalise
+the symbol for Polygon's API.
+
 ## 🔁 Feature Engineering
 Supports:
 - Technical indicators

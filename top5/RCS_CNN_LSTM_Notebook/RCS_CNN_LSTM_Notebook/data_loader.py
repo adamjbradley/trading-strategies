@@ -3,12 +3,23 @@ import requests
 import pandas as pd
 from datetime import datetime
 
+# Normalize symbols like "EUR/USD" -> "EURUSD" for providers such as Polygon
+def normalize_symbol(symbol: str) -> str:
+    """Return an uppercase symbol without separator characters."""
+    return symbol.replace('/', '').upper()
+
 # Utility: parse date and convert to datetime
 def parse_date(ts, fmt="%Y-%m-%d %H:%M:%S"):
     return datetime.strptime(ts, fmt)
 
 def load_polygon_data(symbol, api_key, interval="minute", limit=500):
-    url = f"https://api.polygon.io/v2/aggs/ticker/C:{symbol}/range/1/{interval}/2023-01-01/2023-12-31?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
+    """Load data from Polygon for a currency pair or metal symbol."""
+    symbol_clean = normalize_symbol(symbol)
+    url = (
+        "https://api.polygon.io/v2/aggs/ticker/C:"
+        f"{symbol_clean}/range/1/{interval}/2023-01-01/2023-12-31"
+        f"?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
+    )
     resp = requests.get(url)
     data = resp.json().get("results", [])
     return pd.DataFrame([{
