@@ -1,1 +1,6 @@
 *.zip
+
+# Ignore Python cache directories
+__pycache__/
+.ipynb_checkpoints/
+.vscode/
