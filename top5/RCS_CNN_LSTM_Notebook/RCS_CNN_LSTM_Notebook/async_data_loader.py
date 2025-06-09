@@ -5,7 +5,9 @@ import yfinance as yf
 from datetime import datetime
 import MetaTrader5 as mt5
 
-from .data_loader import normalize_symbol
+# Relative imports can cause issues when running this module as a script.
+# Import normalize_symbol from data_loader using an absolute import instead.
+from data_loader import normalize_symbol
 
 def parse_date(ts, fmt="%Y-%m-%d %H:%M:%S"):
     return datetime.strptime(ts, fmt)
