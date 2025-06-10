@@ -1,0 +1,2 @@
+Feature Set,Accuracy,Features
+Top 10 Permutation,0.4943064182194617,"['return_1d', 'return_3d', 'rolling_mean_5', 'stoch_k', 'stoch_d', 'momentum_slope', 'atr', 'rolling_std_5', 'adx', 'cci']"

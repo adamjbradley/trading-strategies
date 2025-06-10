@@ -1,3 +1,4 @@
-__pycache__/
-.ipynb_checkpoints/
-.vscode/
+# Ignore all PNG files (plots, figures)
+*.png
+comparison_plots/
+*.onnx

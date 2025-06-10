@@ -5,15 +5,11 @@ import pandas as pd
 import requests
 import yfinance as yf
 from datetime import datetime
+from typing import Optional
+from mt5_downloader import MT5Downloader
 import MetaTrader5 as mt5
 
-# MetaTrader5 library is optional because it requires a local terminal
-try:
-    import MetaTrader5 as mt5  # type: ignore
-except ImportError:  # pragma: no cover - library may be missing
-    mt5 = None
-
-    # Supported provider names for fetch_all_data
+# Supported provider names for fetch_all_data
 VALID_PROVIDERS = {"twelvedata", "polygon", "yfinance", "metatrader"}
 
 # Normalize symbols like "EUR/USD" -> "EURUSD" for providers such as Polygon
@@ -105,7 +101,7 @@ def _map_interval_to_timeframe(interval: str) -> str:
     return mapping.get(interval.lower(), interval.upper())
 
 
-def _load_metatrader(symbol: str, timeframe: str = "H1", bars: int = 5000, path: str | None = None):
+def _load_metatrader(symbol: str, timeframe: str = "H1", bars: int = 5000, path: Optional[str] = None):
     if mt5 is None:
         raise ImportError("MetaTrader5 package is not installed")
     if path:
@@ -128,72 +124,46 @@ def _load_metatrader(symbol: str, timeframe: str = "H1", bars: int = 5000, path:
     df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
     return df[["timestamp", "open", "high", "low", "close", "volume"]]
 
-async def fetch_metatrader_data(symbol, timeframe="H1", bars=5000, interval=None, path=None, **_):
-    if interval and not timeframe:
-        timeframe = _map_interval_to_timeframe(interval)
+async def fetch_metatrader_data(symbol, timeframe="H1", start=None, end=None, broker="default"):
+    """
+    Fetch OHLC data from MetaTrader 5 using the robust MT5Downloader class.
+    This function runs the synchronous MT5Downloader logic in a thread executor for async compatibility.
+    """
     loop = asyncio.get_event_loop()
-    return await loop.run_in_executor(None, lambda: _load_metatrader(symbol, timeframe, bars, path))
-
-async def fetch_metatrader_data(symbol, timeframe=mt5.TIMEFRAME_M1, start=None, end=None):
-    """Fetch OHLC data from a running MetaTrader 5 terminal."""
-    # Map string timeframes to mt5 constants if needed
-    TIMEFRAME_MAP = {
-        "M1": mt5.TIMEFRAME_M1,
-        "M2": mt5.TIMEFRAME_M2,
-        "M3": mt5.TIMEFRAME_M3,
-        "M4": mt5.TIMEFRAME_M4,
-        "M5": mt5.TIMEFRAME_M5,
-        "M6": mt5.TIMEFRAME_M6,
-        "M10": mt5.TIMEFRAME_M10,
-        "M12": mt5.TIMEFRAME_M12,
-        "M15": mt5.TIMEFRAME_M15,
-        "M20": mt5.TIMEFRAME_M20,
-        "M30": mt5.TIMEFRAME_M30,
-        "H1": mt5.TIMEFRAME_H1,
-        "H2": mt5.TIMEFRAME_H2,
-        "H3": mt5.TIMEFRAME_H3,
-        "H4": mt5.TIMEFRAME_H4,
-        "H6": mt5.TIMEFRAME_H6,
-        "H8": mt5.TIMEFRAME_H8,
-        "H12": mt5.TIMEFRAME_H12,
-        "D1": mt5.TIMEFRAME_D1,
-        "W1": mt5.TIMEFRAME_W1,
-        "MN1": mt5.TIMEFRAME_MN1,
-    }
-    if isinstance(timeframe, str):
-        timeframe = TIMEFRAME_MAP.get(timeframe.upper(), mt5.TIMEFRAME_M1)
-
-    loop = asyncio.get_event_loop()
-
-    def _load():
-        if not mt5.initialize():
-            print("MetaTrader5 initialization failed")
-            return None
+    def _download():
+        downloader = MT5Downloader(broker=broker)
+        if not downloader.initialize():
+            return pd.DataFrame()
         try:
-            symbol_info = mt5.symbol_info(symbol)
+            symbol_info = downloader.ensure_symbol(symbol)
             if symbol_info is None:
-                print(f"Symbol '{symbol}' not found in MetaTrader5. Please check symbol name and availability.")
-                return None
-            if not symbol_info.visible:
-                print(f"Symbol '{symbol}' is not visible in Market Watch. Attempting to add...")
-                if not mt5.symbol_select(symbol, True):
-                    print(f"Failed to add symbol '{symbol}' to Market Watch.")
-                    return None
-            records = mt5.copy_rates_range(symbol, timeframe, start, end)
-            if records is None or len(records) == 0:
-                print(f"No data returned for symbol '{symbol}' in the given range.")
-                return None
-            return records
+                return pd.DataFrame()
+            # Use the downloader's download_symbol_timeframe method
+            df_path = downloader.download_symbol_timeframe(symbol, timeframe, start, end)
+            if df_path:
+                # Always read the Parquet file for robustness
+                base_filename = os.path.splitext(df_path)[0]
+                parquet_filename = base_filename + ".parquet"
+                try:
+                    df = pd.read_parquet(parquet_filename)
+                except Exception as e:
+                    print(f"    Error reading {parquet_filename}: {e}. Will re-download.")
+                    try:
+                        os.remove(parquet_filename)
+                    except Exception as del_e:
+                        print(f"    Error deleting corrupt file {parquet_filename}: {del_e}")
+                    # Re-download
+                    df_path = downloader.download_symbol_timeframe(symbol, timeframe, start, end)
+                    base_filename = os.path.splitext(df_path)[0]
+                    parquet_filename = base_filename + ".parquet"
+                    df = pd.read_parquet(parquet_filename)
+                return df
+            else:
+                return pd.DataFrame()
         finally:
-            mt5.shutdown()
-
-    records = await loop.run_in_executor(None, _load)
-    if records is None:
-        return pd.DataFrame()
-    df = pd.DataFrame(records)
-    df["timestamp"] = pd.to_datetime(df["time"], unit="s")
-    df.rename(columns={"tick_volume": "volume"}, inplace=True)
-    return df[["timestamp", "open", "high", "low", "close", "volume"]]
+            downloader.shutdown()
+    df = await loop.run_in_executor(None, _download)
+    return df
 
 async def fetch_all_data(symbols, provider, api_key, **kwargs):
     """Fetch data for multiple symbols from the given provider."""
@@ -210,13 +180,12 @@ async def fetch_all_data(symbols, provider, api_key, **kwargs):
             elif provider == "yfinance":
                 tasks.append(fetch_yfinance(symbol, **kwargs))
             elif provider == "metatrader":
-                tasks.append(fetch_metatrader_data(symbol, **kwargs))
                 # Map 'interval' to 'timeframe' for MetaTrader provider and filter valid args
                 mt_kwargs = kwargs.copy()
                 if "interval" in mt_kwargs:
                     mt_kwargs["timeframe"] = mt_kwargs.pop("interval")
                 # Only keep valid arguments for fetch_metatrader_data
-                valid_mt_args = {"timeframe", "start", "end"}
+                valid_mt_args = {"timeframe", "start", "end", "broker"}
                 mt_kwargs = {k: v for k, v in mt_kwargs.items() if k in valid_mt_args}
                 tasks.append(fetch_metatrader_data(symbol, **mt_kwargs))
         results = await asyncio.gather(*tasks)
