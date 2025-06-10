@@ -1,9 +1,30 @@
 import argparse
 import asyncio
 
-from async_data_loader import fetch_all_data
-from data_loader import save_optimized, assess_quality, compare_dataframes
+from async_data_loader import fetch_all_data, save_optimized
 
+
+def assess_quality(df):
+    """Basic data quality assessment for a DataFrame."""
+    print("Data shape:", df.shape)
+    print("Missing values per column:\n", df.isnull().sum())
+    print("Number of duplicate rows:", df.duplicated().sum())
+    if df.empty or df.shape[1] == 0:
+        print("DataFrame is empty. No summary statistics available.")
+    else:
+        print("Summary statistics:\n", df.describe(include='all'))
+
+def compare_dataframes(df1, df2, provider1, provider2):
+    """Basic comparison between two DataFrames."""
+    print(f"Comparing {provider1} vs {provider2}:")
+    print(f"Shape: {provider1}: {df1.shape}, {provider2}: {df2.shape}")
+    if df1.shape != df2.shape:
+        print("DataFrames have different shapes.")
+    else:
+        diff = (df1 != df2).sum().sum()
+        print(f"Number of differing values: {diff}")
+    print("Missing values in first DataFrame:\n", df1.isnull().sum())
+    print("Missing values in second DataFrame:\n", df2.isnull().sum())
 
 def main():
     parser = argparse.ArgumentParser(description="Manual data downloader")
@@ -53,4 +74,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
