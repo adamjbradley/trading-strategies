@@ -1,4 +1,8 @@
 # Trading Strategies
+Trading Strategies
+
+Supported provider strings for `fetch_all_data` are `twelvedata`, `polygon`,
+`yfinance` and `metatrader`.
 
 This repository aggregates two independent algorithmic trading projects:
 
@@ -20,5 +24,4 @@ This repository aggregates two independent algorithmic trading projects:
    python grid/grid_backtester_github/grid_backtester/run_backtest.py
    python top5/RCS_CNN_LSTM_Notebook/RCS_CNN_LSTM_Notebook/backtest.py
    ```
-
 For more details, refer to the READMEs inside each project directory.

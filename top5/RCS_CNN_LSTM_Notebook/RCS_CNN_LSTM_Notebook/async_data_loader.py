@@ -7,6 +7,9 @@ import yfinance as yf
 from datetime import datetime
 import MetaTrader5 as mt5
 
+# Supported provider names for fetch_all_data
+VALID_PROVIDERS = {"twelvedata", "polygon", "yfinance", "metatrader"}
+
 # Normalize symbols like "EUR/USD" -> "EURUSD" for providers such as Polygon
 def normalize_symbol(symbol: str) -> str:
     """Return an uppercase symbol without separator characters."""
@@ -94,6 +97,10 @@ async def fetch_metatrader_data(symbol, timeframe=mt5.TIMEFRAME_M1, start=None, 
     return df[["timestamp", "open", "high", "low", "close", "volume"]]
 
 async def fetch_all_data(symbols, provider, api_key, **kwargs):
+    """Fetch data for multiple symbols from the given provider."""
+    if provider not in VALID_PROVIDERS:
+        raise ValueError(f"Unsupported provider: {provider}")
+
     async with aiohttp.ClientSession() as session:
         tasks = []
         for symbol in symbols:
@@ -105,6 +112,7 @@ async def fetch_all_data(symbols, provider, api_key, **kwargs):
                 tasks.append(fetch_yfinance(symbol, **kwargs))
             elif provider == "metatrader":
                 tasks.append(fetch_metatrader_data(symbol, **kwargs))
+
         results = await asyncio.gather(*tasks)
         return dict(zip(symbols, results))
 
