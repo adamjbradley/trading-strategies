@@ -7,3 +7,8 @@
 __pycache__/
 .ipynb_checkpoints/
 .vscode/
+
+# Ignore data, logs, and models directories
+data/
+logs/
+models/
