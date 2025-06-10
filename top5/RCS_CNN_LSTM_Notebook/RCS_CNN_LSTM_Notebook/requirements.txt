@@ -8,3 +8,4 @@ shap
 streamlit
 tsfresh
 yfinance
+MetaTrader5

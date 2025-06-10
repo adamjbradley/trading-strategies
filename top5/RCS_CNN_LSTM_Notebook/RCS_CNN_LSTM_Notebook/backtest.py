@@ -7,6 +7,7 @@ from async_data_loader import (
     load_twelve_data,
     load_polygon_data,
     load_yfinance,
+    load_metatrader_data,
 )
 
 def run_backtest(config):
@@ -38,6 +39,7 @@ def run_backtest(config):
             "twelvedata": load_twelve_data,
             "polygon": load_polygon_data,
             "yfinance": load_yfinance,
+            "metatrader": load_metatrader_data,
         }
         loader = loader_map.get(provider, load_twelve_data)
         df = load_or_fetch(

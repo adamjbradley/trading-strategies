@@ -1,3 +1,22 @@
+# Archives
+*.zip
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Jupyter
+.ipynb_checkpoints/
+.vscode/
+
+# Data, logs, models
+data/
+logs/
+models/
+
+# Compiled binaries
+*.ex5
+=======
 # Ignore archive files
 *.zip
 

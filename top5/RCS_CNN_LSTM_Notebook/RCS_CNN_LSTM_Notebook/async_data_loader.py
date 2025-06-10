@@ -7,7 +7,13 @@ import yfinance as yf
 from datetime import datetime
 import MetaTrader5 as mt5
 
-# Supported provider names for fetch_all_data
+# MetaTrader5 library is optional because it requires a local terminal
+try:
+    import MetaTrader5 as mt5  # type: ignore
+except ImportError:  # pragma: no cover - library may be missing
+    mt5 = None
+
+    # Supported provider names for fetch_all_data
 VALID_PROVIDERS = {"twelvedata", "polygon", "yfinance", "metatrader"}
 
 # Normalize symbols like "EUR/USD" -> "EURUSD" for providers such as Polygon
@@ -83,6 +89,50 @@ async def fetch_yfinance(symbol, interval="1m", period="1y", **_):
     df = df.reset_index()
     df.rename(columns={"Datetime": "timestamp", "Date": "timestamp", "Open": "open", "High": "high", "Low": "low", "Close": "close", "Adj Close": "close", "Volume": "volume"}, inplace=True)
     return df[["timestamp", "open", "high", "low", "close", "volume"]]
+
+def _map_interval_to_timeframe(interval: str) -> str:
+    mapping = {
+        "1m": "M1",
+        "1min": "M1",
+        "5m": "M5",
+        "5min": "M5",
+        "15m": "M15",
+        "30m": "M30",
+        "1h": "H1",
+        "60m": "H1",
+        "4h": "H4",
+    }
+    return mapping.get(interval.lower(), interval.upper())
+
+
+def _load_metatrader(symbol: str, timeframe: str = "H1", bars: int = 5000, path: str | None = None):
+    if mt5 is None:
+        raise ImportError("MetaTrader5 package is not installed")
+    if path:
+        initialized = mt5.initialize(path)
+    else:
+        initialized = mt5.initialize()
+    if not initialized:
+        raise RuntimeError("MetaTrader5 initialization failed")
+    try:
+        if not mt5.symbol_select(symbol, True):
+            raise RuntimeError(f"Symbol {symbol} not available")
+        tf = getattr(mt5, f"TIMEFRAME_{timeframe.upper()}", mt5.TIMEFRAME_H1)
+        rates = mt5.copy_rates_from_pos(symbol, tf, 0, bars)
+    finally:
+        mt5.shutdown()
+    if rates is None:
+        return pd.DataFrame()
+    df = pd.DataFrame(rates)
+    df.rename(columns={"time": "timestamp", "tick_volume": "volume"}, inplace=True)
+    df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
+    return df[["timestamp", "open", "high", "low", "close", "volume"]]
+
+async def fetch_metatrader_data(symbol, timeframe="H1", bars=5000, interval=None, path=None, **_):
+    if interval and not timeframe:
+        timeframe = _map_interval_to_timeframe(interval)
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, lambda: _load_metatrader(symbol, timeframe, bars, path))
 
 async def fetch_metatrader_data(symbol, timeframe=mt5.TIMEFRAME_M1, start=None, end=None):
     """Fetch OHLC data from a running MetaTrader 5 terminal."""
@@ -160,6 +210,7 @@ async def fetch_all_data(symbols, provider, api_key, **kwargs):
             elif provider == "yfinance":
                 tasks.append(fetch_yfinance(symbol, **kwargs))
             elif provider == "metatrader":
+                tasks.append(fetch_metatrader_data(symbol, **kwargs))
                 # Map 'interval' to 'timeframe' for MetaTrader provider and filter valid args
                 mt_kwargs = kwargs.copy()
                 if "interval" in mt_kwargs:
@@ -168,7 +219,6 @@ async def fetch_all_data(symbols, provider, api_key, **kwargs):
                 valid_mt_args = {"timeframe", "start", "end"}
                 mt_kwargs = {k: v for k, v in mt_kwargs.items() if k in valid_mt_args}
                 tasks.append(fetch_metatrader_data(symbol, **mt_kwargs))
-
         results = await asyncio.gather(*tasks)
         return dict(zip(symbols, results))
 
@@ -176,7 +226,7 @@ async def fetch_all_data(symbols, provider, api_key, **kwargs):
 # Synchronous helpers copied from the old `data_loader` module
 # ---------------------------------------------------------------------------
 
-def load_polygon_data(symbol, api_key, interval="minute", limit=500, start="2023-01-01", end="2023-12-31"):
+def load_polygon_data(symbol, api_key, interval="minute", limit=500):
     """Synchronously fetch Polygon.io data for a date range."""
     api_key = _resolve_key(api_key, "POLYGON_API_KEY")
     symbol_clean = normalize_symbol(symbol)
@@ -289,6 +339,12 @@ def load_yfinance(symbol, interval="1m", period="1y", **_):
         inplace=True,
     )
     return df[["timestamp", "open", "high", "low", "close", "volume"]]
+
+def load_metatrader_data(symbol, timeframe="H1", bars=5000, interval=None, path=None, **_):
+    """Load data from a running MetaTrader 5 terminal."""
+    if interval and not timeframe:
+        timeframe = _map_interval_to_timeframe(interval)
+    return _load_metatrader(symbol, timeframe, bars, path)
 
 def save_optimized(df, symbol, provider):
     symbol_clean = symbol.replace("/", "").upper()
