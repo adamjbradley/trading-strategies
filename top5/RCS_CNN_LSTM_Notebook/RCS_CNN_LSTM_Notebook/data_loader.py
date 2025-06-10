@@ -74,9 +74,14 @@ def load_tiingo(symbol, api_key, limit=500):
     } for d in data])
 
 
-def load_yfinance(symbol, interval="1m", period="1y"):
+def load_yfinance(symbol, interval="1m", period="1y", **_):
     """Load data from Yahoo Finance."""
-    df = yf.download(symbol, interval=interval, period=period, progress=False)
+    df = yf.download(
+        symbol,
+        interval=interval,
+        period=period,
+        progress=False,
+    )
     if df.empty:
         return pd.DataFrame()
     df = df.reset_index()

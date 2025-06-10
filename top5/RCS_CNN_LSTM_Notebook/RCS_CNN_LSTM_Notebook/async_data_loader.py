@@ -47,10 +47,18 @@ async def fetch_polygon_data(session, symbol, api_key, interval="minute", limit=
         for d in results
     ])
 
-async def fetch_yfinance(symbol, interval="1m", period="1y"):
+async def fetch_yfinance(symbol, interval="1m", period="1y", **_):
     """Fetch data from Yahoo Finance using a thread executor."""
     loop = asyncio.get_event_loop()
-    df = await loop.run_in_executor(None, lambda: yf.download(symbol, interval=interval, period=period, progress=False))
+    df = await loop.run_in_executor(
+        None,
+        lambda: yf.download(
+            symbol,
+            interval=interval,
+            period=period,
+            progress=False,
+        ),
+    )
     if df.empty:
         return pd.DataFrame()
     df = df.reset_index()
