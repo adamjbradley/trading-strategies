@@ -3,6 +3,8 @@ symbol: "EUR/USD"
 provider: "twelvedata"
 interval: "1min"
 outputsize: 500
+start: "2023-01-01"
+end: "2023-12-31"
 
 api_keys:
   twelvedata: "your_twelvedata_api_key"

@@ -36,11 +36,20 @@ async def fetch_twelve_data(session, symbol, api_key, interval="1min", outputsiz
         "low": float(d["low"]), "close": float(d["close"]), "volume": float(d.get("volume", 0))
     } for d in reversed(values)])
 
-async def fetch_polygon_data(session, symbol, api_key, interval="minute", limit=500):
+async def fetch_polygon_data(
+    session,
+    symbol,
+    api_key,
+    interval="minute",
+    limit=500,
+    start="2023-01-01",
+    end="2023-12-31",
+):
+    """Fetch OHLC data from Polygon.io within a date range."""
     symbol_clean = normalize_symbol(symbol)
     url = (
         "https://api.polygon.io/v2/aggs/ticker/C:"
-        f"{symbol_clean}/range/1/{interval}/2023-01-01/2023-12-31"
+        f"{symbol_clean}/range/1/{interval}/{start}/{end}"
         f"?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
     )
     data = await fetch_json(session, url)
@@ -120,12 +129,13 @@ async def fetch_all_data(symbols, provider, api_key, **kwargs):
 # Synchronous helpers copied from the old `data_loader` module
 # ---------------------------------------------------------------------------
 
-def load_polygon_data(symbol, api_key, interval="minute", limit=500):
+def load_polygon_data(symbol, api_key, interval="minute", limit=500, start="2023-01-01", end="2023-12-31"):
+    """Synchronously fetch Polygon.io data for a date range."""
     api_key = _resolve_key(api_key, "POLYGON_API_KEY")
     symbol_clean = normalize_symbol(symbol)
     url = (
         "https://api.polygon.io/v2/aggs/ticker/C:"
-        f"{symbol_clean}/range/1/{interval}/2023-01-01/2023-12-31"
+        f"{symbol_clean}/range/1/{interval}/{start}/{end}"
         f"?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
     )
     resp = requests.get(url)
