@@ -1,9 +1,32 @@
+# Archives
 *.zip
 
-# Ignore MetaTrader compiled binaries
+# Compiled binaries
 *.ex5
+*.exe
+*.dll
+*.so
+*.py[cod]
+*.o
+*.out
 
-# Ignore Python cache directories
-__pycache__/
+# Checkpoints
 .ipynb_checkpoints/
+
+# Editor folders
 .vscode/
+.idea/
+
+# Cache directories
+__pycache__/
+.cache/
+.pytest_cache/
+
+# Logs
+*.log
+logs/
+
+# Data and models
+data/
+datasets/
+models/
