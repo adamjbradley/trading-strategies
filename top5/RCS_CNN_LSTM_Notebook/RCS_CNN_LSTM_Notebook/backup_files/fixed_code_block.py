@@ -1,11 +1,3 @@
-import numpy as np
-import pandas as pd
-import copy
-from sklearn.metrics import accuracy_score
-from sklearn.preprocessing import StandardScaler
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.inspection import permutation_importance
-
 """
 Fixed Code Block for Permutation Importance
 
@@ -139,20 +131,5 @@ def run_permutation_importance(model, data, target, symbol, minimal_features=Non
     
     return importance_df
 
-def evaluate_and_save_feature_sets(feature_matrix, y, feature_sets, symbol_to_predict, lookback_window=20, model_fn=None, epochs=10, batch_size=32):
-    """
-    Evaluate feature sets, build results_df, save results to CSV, and return results_df and best_row.
-    """
-    results_df = compare_feature_sets(
-        feature_matrix, y, feature_sets,
-        lookback_window=lookback_window,
-        model_fn=model_fn,
-        epochs=epochs,
-        batch_size=batch_size
-    )
-    best_row = results_df.sort_values(by='Accuracy', ascending=False).iloc[0]
-    results_df.to_csv(f'feature_set_results_{symbol_to_predict}.csv', index=False)
-    best_row.to_frame().T.to_csv(f'best_feature_set_{symbol_to_predict}.csv', index=False)
-    print(f"📁 Saved results to feature_set_results_{symbol_to_predict}.csv")
-    print(f"🏆 Best set saved to best_feature_set_{symbol_to_predict}.csv")
-    return results_df, best_row
+print("✅ Fixed code block is ready to use")
+print("Copy and paste the relevant functions into your notebook")

@@ -16,9 +16,22 @@ def train_test_split_rolling(X, y, test_size=0.2):
 
 def build_cnn_lstm_model(input_shape):
     input_layer = Input(shape=input_shape)
-    x = Conv1D(filters=64, kernel_size=3, activation='relu')(input_layer)
+    
+    # Adapt kernel size based on sequence length (first dimension of input_shape)
+    sequence_length = input_shape[0]
+    kernel_size = min(3, sequence_length)
+    
+    # First Conv1D layer with adaptive kernel size
+    x = Conv1D(filters=64, kernel_size=kernel_size, padding='same', activation='relu')(input_layer)
     x = BatchNormalization()(x)
-    x = Conv1D(filters=32, kernel_size=3, activation='relu')(x)
+    
+    # Second Conv1D layer with adaptive kernel size (only if sequence length allows)
+    if sequence_length > 1:
+        x = Conv1D(filters=32, kernel_size=kernel_size, padding='same', activation='relu')(x)
+    else:
+        # For sequence length of 1, use kernel_size=1
+        x = Conv1D(filters=32, kernel_size=1, padding='same', activation='relu')(x)
+    
     x = LSTM(64, return_sequences=False)(x)
     x = Dropout(0.3)(x)
     output = Dense(1, activation='sigmoid')(x)

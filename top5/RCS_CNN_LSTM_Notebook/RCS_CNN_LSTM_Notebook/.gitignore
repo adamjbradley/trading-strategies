@@ -2,3 +2,4 @@
 *.png
 comparison_plots/
 *.onnx
+*.h5

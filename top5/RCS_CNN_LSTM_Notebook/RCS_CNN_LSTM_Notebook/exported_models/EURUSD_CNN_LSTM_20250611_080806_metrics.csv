@@ -1,0 +1,2 @@
+model_name,symbol,timestamp,accuracy,sharpe_ratio,total_return,num_features
+EURUSD_CNN_LSTM_20250611_080806,EURUSD,20250611_080806,0.5272969374167776,2.092151179229564,0.10870300792916576,23
