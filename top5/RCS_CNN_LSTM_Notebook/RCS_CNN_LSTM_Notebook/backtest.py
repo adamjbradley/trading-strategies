@@ -1,8 +1,8 @@
 import yaml
 import asyncio
 import argparse
-from async_data_loader import fetch_all_data
-from data_loader import (
+from async_data_loader import (
+    fetch_all_data,
     load_or_fetch,
     load_twelve_data,
     load_polygon_data,
