@@ -55,7 +55,6 @@ async def fetch_polygon_data(session, symbol, api_key, interval="minute", limit=
     ])
 
 async def fetch_yfinance(symbol, interval="1m", period="1y", **_):
-async def fetch_yfinance(symbol, interval="1m", period="1y", **_):
     """Fetch data from Yahoo Finance using a thread executor."""
     loop = asyncio.get_event_loop()
     df = await loop.run_in_executor(
