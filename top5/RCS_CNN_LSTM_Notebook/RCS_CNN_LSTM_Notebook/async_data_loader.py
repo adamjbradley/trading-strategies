@@ -5,12 +5,16 @@ import pandas as pd
 import requests
 import yfinance as yf
 from datetime import datetime
+import MetaTrader5 as mt5
 
 # MetaTrader5 library is optional because it requires a local terminal
 try:
     import MetaTrader5 as mt5  # type: ignore
 except ImportError:  # pragma: no cover - library may be missing
     mt5 = None
+
+    # Supported provider names for fetch_all_data
+VALID_PROVIDERS = {"twelvedata", "polygon", "yfinance", "metatrader"}
 
 # Normalize symbols like "EUR/USD" -> "EURUSD" for providers such as Polygon
 def normalize_symbol(symbol: str) -> str:
@@ -38,11 +42,20 @@ async def fetch_twelve_data(session, symbol, api_key, interval="1min", outputsiz
         "low": float(d["low"]), "close": float(d["close"]), "volume": float(d.get("volume", 0))
     } for d in reversed(values)])
 
-async def fetch_polygon_data(session, symbol, api_key, interval="minute", limit=500):
+async def fetch_polygon_data(
+    session,
+    symbol,
+    api_key,
+    interval="minute",
+    limit=500,
+    start="2023-01-01",
+    end="2023-12-31",
+):
+    """Fetch OHLC data from Polygon.io within a date range."""
     symbol_clean = normalize_symbol(symbol)
     url = (
         "https://api.polygon.io/v2/aggs/ticker/C:"
-        f"{symbol_clean}/range/1/{interval}/2023-01-01/2023-12-31"
+        f"{symbol_clean}/range/1/{interval}/{start}/{end}"
         f"?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
     )
     data = await fetch_json(session, url)
@@ -62,7 +75,15 @@ async def fetch_polygon_data(session, symbol, api_key, interval="minute", limit=
 async def fetch_yfinance(symbol, interval="1m", period="1y", **_):
     """Fetch data from Yahoo Finance using a thread executor."""
     loop = asyncio.get_event_loop()
-    df = await loop.run_in_executor(None, lambda: yf.download(symbol, interval=interval, period=period, progress=False))
+    df = await loop.run_in_executor(
+        None,
+        lambda: yf.download(
+            symbol,
+            interval=interval,
+            period=period,
+            progress=False,
+        ),
+    )
     if df.empty:
         return pd.DataFrame()
     df = df.reset_index()
@@ -113,7 +134,72 @@ async def fetch_metatrader_data(symbol, timeframe="H1", bars=5000, interval=None
     loop = asyncio.get_event_loop()
     return await loop.run_in_executor(None, lambda: _load_metatrader(symbol, timeframe, bars, path))
 
+async def fetch_metatrader_data(symbol, timeframe=mt5.TIMEFRAME_M1, start=None, end=None):
+    """Fetch OHLC data from a running MetaTrader 5 terminal."""
+    # Map string timeframes to mt5 constants if needed
+    TIMEFRAME_MAP = {
+        "M1": mt5.TIMEFRAME_M1,
+        "M2": mt5.TIMEFRAME_M2,
+        "M3": mt5.TIMEFRAME_M3,
+        "M4": mt5.TIMEFRAME_M4,
+        "M5": mt5.TIMEFRAME_M5,
+        "M6": mt5.TIMEFRAME_M6,
+        "M10": mt5.TIMEFRAME_M10,
+        "M12": mt5.TIMEFRAME_M12,
+        "M15": mt5.TIMEFRAME_M15,
+        "M20": mt5.TIMEFRAME_M20,
+        "M30": mt5.TIMEFRAME_M30,
+        "H1": mt5.TIMEFRAME_H1,
+        "H2": mt5.TIMEFRAME_H2,
+        "H3": mt5.TIMEFRAME_H3,
+        "H4": mt5.TIMEFRAME_H4,
+        "H6": mt5.TIMEFRAME_H6,
+        "H8": mt5.TIMEFRAME_H8,
+        "H12": mt5.TIMEFRAME_H12,
+        "D1": mt5.TIMEFRAME_D1,
+        "W1": mt5.TIMEFRAME_W1,
+        "MN1": mt5.TIMEFRAME_MN1,
+    }
+    if isinstance(timeframe, str):
+        timeframe = TIMEFRAME_MAP.get(timeframe.upper(), mt5.TIMEFRAME_M1)
+
+    loop = asyncio.get_event_loop()
+
+    def _load():
+        if not mt5.initialize():
+            print("MetaTrader5 initialization failed")
+            return None
+        try:
+            symbol_info = mt5.symbol_info(symbol)
+            if symbol_info is None:
+                print(f"Symbol '{symbol}' not found in MetaTrader5. Please check symbol name and availability.")
+                return None
+            if not symbol_info.visible:
+                print(f"Symbol '{symbol}' is not visible in Market Watch. Attempting to add...")
+                if not mt5.symbol_select(symbol, True):
+                    print(f"Failed to add symbol '{symbol}' to Market Watch.")
+                    return None
+            records = mt5.copy_rates_range(symbol, timeframe, start, end)
+            if records is None or len(records) == 0:
+                print(f"No data returned for symbol '{symbol}' in the given range.")
+                return None
+            return records
+        finally:
+            mt5.shutdown()
+
+    records = await loop.run_in_executor(None, _load)
+    if records is None:
+        return pd.DataFrame()
+    df = pd.DataFrame(records)
+    df["timestamp"] = pd.to_datetime(df["time"], unit="s")
+    df.rename(columns={"tick_volume": "volume"}, inplace=True)
+    return df[["timestamp", "open", "high", "low", "close", "volume"]]
+
 async def fetch_all_data(symbols, provider, api_key, **kwargs):
+    """Fetch data for multiple symbols from the given provider."""
+    if provider not in VALID_PROVIDERS:
+        raise ValueError(f"Unsupported provider: {provider}")
+
     async with aiohttp.ClientSession() as session:
         tasks = []
         for symbol in symbols:
@@ -125,6 +211,14 @@ async def fetch_all_data(symbols, provider, api_key, **kwargs):
                 tasks.append(fetch_yfinance(symbol, **kwargs))
             elif provider == "metatrader":
                 tasks.append(fetch_metatrader_data(symbol, **kwargs))
+                # Map 'interval' to 'timeframe' for MetaTrader provider and filter valid args
+                mt_kwargs = kwargs.copy()
+                if "interval" in mt_kwargs:
+                    mt_kwargs["timeframe"] = mt_kwargs.pop("interval")
+                # Only keep valid arguments for fetch_metatrader_data
+                valid_mt_args = {"timeframe", "start", "end"}
+                mt_kwargs = {k: v for k, v in mt_kwargs.items() if k in valid_mt_args}
+                tasks.append(fetch_metatrader_data(symbol, **mt_kwargs))
         results = await asyncio.gather(*tasks)
         return dict(zip(symbols, results))
 
@@ -133,11 +227,12 @@ async def fetch_all_data(symbols, provider, api_key, **kwargs):
 # ---------------------------------------------------------------------------
 
 def load_polygon_data(symbol, api_key, interval="minute", limit=500):
+    """Synchronously fetch Polygon.io data for a date range."""
     api_key = _resolve_key(api_key, "POLYGON_API_KEY")
     symbol_clean = normalize_symbol(symbol)
     url = (
         "https://api.polygon.io/v2/aggs/ticker/C:"
-        f"{symbol_clean}/range/1/{interval}/2023-01-01/2023-12-31"
+        f"{symbol_clean}/range/1/{interval}/{start}/{end}"
         f"?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
     )
     resp = requests.get(url)

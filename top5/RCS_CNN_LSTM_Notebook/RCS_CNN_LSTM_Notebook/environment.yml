@@ -11,7 +11,8 @@ dependencies:
   - tensorflow
   - pip
   - pip:
-      - ta
+      - MetaTrader5
       - shap
+      - ta
       - yfinance
       - MetaTrader5

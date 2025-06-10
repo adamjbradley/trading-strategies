@@ -1,10 +1,11 @@
-streamlit
-pandas
+MetaTrader5
 matplotlib
 numpy
 onnxruntime
-tsfresh
-shap
+pandas
 scikit-learn
+shap
+streamlit
+tsfresh
 yfinance
 MetaTrader5

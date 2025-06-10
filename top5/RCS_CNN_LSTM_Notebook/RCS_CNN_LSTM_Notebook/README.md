@@ -38,16 +38,26 @@ use_correlation_filter: true
 label_horizon: 10
 label_method: binary
 ```
+`config.yaml` also allows setting `start` and `end` dates (YYYY-MM-DD) for data
+downloads when using providers like Polygon.
 
 When using the Polygon provider, currency pairs may be written with or without
 a `/` (e.g. `EURUSD` or `EUR/USD`). The data loaders automatically normalize
 the symbol for Polygon's API. For the `yfinance` provider, append `=X` to
 currency pairs (e.g. `EURUSD=X`).
+
 When using `metatrader`, ensure the MetaTrader5 terminal is running.  Use
 `--interval` or `--timeframe` to set the desired timeframe (e.g. `H1`, `M5`).
 The loader selects the symbol in the terminal and downloads the requested
 number of bars.
 
+Use `download_data.py` to fetch and cache data manually:
+This stores Parquet/HDF5 files under `data/` and prints quality stats.
+```bash
+python download_data.py --symbol EURUSD --provider yfinance --api_key <key> \
+  --start 2023-01-01 --end 2023-12-31
+```
+Add `--compare-provider polygon` to fetch from a second source and see quality metrics.
 
 ## 🔁 Feature Engineering
 Supports:

@@ -16,10 +16,22 @@ def run_backtest(config):
     api_key = config['api_keys'].get(provider, "")
     interval = config.get("interval", "1min")
     outputsize = config.get("outputsize", 500)
+    start = config.get("start", "2023-01-01")
+    end = config.get("end", "2023-12-31")
 
     if config.get("use_async", False):
         print(f"⚡ Async loading for {symbol}...")
-        df_dict = asyncio.run(fetch_all_data([symbol], provider, api_key, interval=interval, outputsize=outputsize))
+        df_dict = asyncio.run(
+            fetch_all_data(
+                [symbol],
+                provider,
+                api_key,
+                interval=interval,
+                outputsize=outputsize,
+                start=start,
+                end=end,
+            )
+        )
         df = df_dict[symbol]
     else:
         print(f"⏳ Sync loading for {symbol}...")
@@ -37,6 +49,8 @@ def run_backtest(config):
             api_key=api_key,
             interval=interval,
             outputsize=outputsize,
+            start=start,
+            end=end,
         )
 
     print(f"✅ Loaded {len(df)} rows for {symbol} — simulate training or backtest here")
