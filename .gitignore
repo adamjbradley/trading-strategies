@@ -1,3 +1,4 @@
+# Ignore archive files
 *.zip
 
 # Ignore MetaTrader compiled binaries
