@@ -5,6 +5,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 from datetime import datetime
+import MetaTrader5 as mt5
 
 # Normalize symbols like "EUR/USD" -> "EURUSD" for providers such as Polygon
 def normalize_symbol(symbol: str) -> str:
@@ -54,13 +55,43 @@ async def fetch_polygon_data(session, symbol, api_key, interval="minute", limit=
     ])
 
 async def fetch_yfinance(symbol, interval="1m", period="1y", **_):
+async def fetch_yfinance(symbol, interval="1m", period="1y", **_):
     """Fetch data from Yahoo Finance using a thread executor."""
     loop = asyncio.get_event_loop()
-    df = await loop.run_in_executor(None, lambda: yf.download(symbol, interval=interval, period=period, progress=False))
+    df = await loop.run_in_executor(
+        None,
+        lambda: yf.download(
+            symbol,
+            interval=interval,
+            period=period,
+            progress=False,
+        ),
+    )
     if df.empty:
         return pd.DataFrame()
     df = df.reset_index()
     df.rename(columns={"Datetime": "timestamp", "Date": "timestamp", "Open": "open", "High": "high", "Low": "low", "Close": "close", "Adj Close": "close", "Volume": "volume"}, inplace=True)
+    return df[["timestamp", "open", "high", "low", "close", "volume"]]
+
+async def fetch_metatrader_data(symbol, timeframe=mt5.TIMEFRAME_M1, start=None, end=None):
+    """Fetch OHLC data from a running MetaTrader 5 terminal."""
+    loop = asyncio.get_event_loop()
+
+    def _load():
+        if not mt5.initialize():
+            raise RuntimeError("MetaTrader5 initialization failed")
+        try:
+            records = mt5.copy_rates_range(symbol, timeframe, start, end)
+            return records
+        finally:
+            mt5.shutdown()
+
+    records = await loop.run_in_executor(None, _load)
+    if records is None:
+        return pd.DataFrame()
+    df = pd.DataFrame(records)
+    df["timestamp"] = pd.to_datetime(df["time"], unit="s")
+    df.rename(columns={"tick_volume": "volume"}, inplace=True)
     return df[["timestamp", "open", "high", "low", "close", "volume"]]
 
 async def fetch_all_data(symbols, provider, api_key, **kwargs):
@@ -73,6 +104,8 @@ async def fetch_all_data(symbols, provider, api_key, **kwargs):
                 tasks.append(fetch_polygon_data(session, symbol, api_key, **kwargs))
             elif provider == "yfinance":
                 tasks.append(fetch_yfinance(symbol, **kwargs))
+            elif provider == "metatrader":
+                tasks.append(fetch_metatrader_data(symbol, **kwargs))
         results = await asyncio.gather(*tasks)
         return dict(zip(symbols, results))
 
