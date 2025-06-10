@@ -56,7 +56,6 @@ python download_data.py --symbol EURUSD --provider yfinance --api_key <key>
 ```
 Add `--compare-provider polygon` to fetch from a second source and see quality metrics.
 
-
 ## 🔁 Feature Engineering
 Supports:
 - Technical indicators
