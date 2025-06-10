@@ -15,6 +15,10 @@
 
 # Editor folders
 .vscode/
+
+# Ignore data, logs, and models directories
+data/
+logs/
 .idea/
 
 # Cache directories
