@@ -5,6 +5,12 @@ import pandas as pd
 import requests
 import yfinance as yf
 from datetime import datetime
+# MetaTrader5 library is optional because it requires a local terminal
+try:
+    import MetaTrader5 as mt5  # type: ignore
+except ImportError:  # pragma: no cover - library may be missing
+    mt5 = None
+
 import MetaTrader5 as mt5
 
 # Normalize symbols like "EUR/USD" -> "EURUSD" for providers such as Polygon
@@ -38,6 +44,29 @@ async def fetch_polygon_data(session, symbol, api_key, interval="minute", limit=
     url = (
         "https://api.polygon.io/v2/aggs/ticker/C:"
         f"{symbol_clean}/range/1/{interval}/2023-01-01/2023-12-31"
+def _load_metatrader(symbol: str, timeframe: str = "H1", bars: int = 5000):
+    if mt5 is None:
+        raise ImportError("MetaTrader5 package is not installed")
+    if not mt5.initialize():
+        raise RuntimeError("MetaTrader5 initialization failed")
+    try:
+        tf = getattr(mt5, f"TIMEFRAME_{timeframe.upper()}", mt5.TIMEFRAME_H1)
+        rates = mt5.copy_rates_from_pos(symbol, tf, 0, bars)
+    finally:
+        mt5.shutdown()
+    if rates is None:
+        return pd.DataFrame()
+    df = pd.DataFrame(rates)
+    df.rename(columns={"time": "timestamp", "tick_volume": "volume"}, inplace=True)
+    df["timestamp"] = pd.to_datetime(df["timestamp"], unit="s")
+    return df[["timestamp", "open", "high", "low", "close", "volume"]]
+
+async def fetch_metatrader_data(symbol, timeframe="H1", bars=5000, **_):
+    loop = asyncio.get_event_loop()
+    return await loop.run_in_executor(None, lambda: _load_metatrader(symbol, timeframe, bars))
+
+            elif provider == "metatrader":
+                tasks.append(fetch_metatrader_data(symbol, **kwargs))
         f"?adjusted=true&sort=asc&limit={limit}&apiKey={api_key}"
     )
     data = await fetch_json(session, url)
@@ -168,6 +197,10 @@ def load_alpha_vantage(symbol, api_key, interval="1min"):
             "high": float(d["2. high"]),
             "low": float(d["3. low"]),
             "close": float(d["4. close"]),
+def load_metatrader_data(symbol, timeframe="H1", bars=5000, **_):
+    """Load data from a running MetaTrader 5 terminal."""
+    return _load_metatrader(symbol, timeframe, bars)
+
             "volume": 0,
         }
         for ts, d in sorted(time_series.items())

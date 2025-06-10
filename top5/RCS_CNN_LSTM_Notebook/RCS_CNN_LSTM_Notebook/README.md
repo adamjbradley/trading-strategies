@@ -43,6 +43,8 @@ When using the Polygon provider, currency pairs may be written with or without
 a `/` (e.g. `EURUSD` or `EUR/USD`). The data loaders automatically normalize
 the symbol for Polygon's API. For the `yfinance` provider, append `=X` to
 currency pairs (e.g. `EURUSD=X`).
+When using `metatrader`, ensure the MetaTrader5 terminal is running and specify
+the desired timeframe (e.g. `H1`) and number of bars.
 For the `metatrader` provider, install the `MetaTrader5` Python package and make
 sure the MetaTrader 5 terminal is installed on your computer. Launch the terminal,
 log in to your trading account and keep it running ("Algo Trading" enabled). The

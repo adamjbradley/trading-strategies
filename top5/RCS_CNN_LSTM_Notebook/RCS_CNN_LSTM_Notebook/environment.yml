@@ -12,6 +12,7 @@ dependencies:
   - pip
   - pip:
       - MetaTrader5
+      - MetaTrader5
       - shap
       - ta
       - yfinance
