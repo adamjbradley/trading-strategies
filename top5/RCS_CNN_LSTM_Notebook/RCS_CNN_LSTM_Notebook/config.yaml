@@ -11,6 +11,7 @@ api_keys:
   alphavantage: "your_alpha_vantage_api_key"
   currencystack: "your_currencystack_api_key"
   tiingo: "your_tiingo_api_key"
+  metatrader: ""  # MetaTrader5 does not require an API key
 
 mlflow_enabled: true
 mlflow_experiment: RCS_Trading

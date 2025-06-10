@@ -1,12 +1,13 @@
 import yaml
 import asyncio
 import argparse
-from async_data_loader import fetch_all_data
-from data_loader import (
+from async_data_loader import (
+    fetch_all_data,
     load_or_fetch,
     load_twelve_data,
     load_polygon_data,
     load_yfinance,
+    load_metatrader_data,
 )
 
 def run_backtest(config):
@@ -26,6 +27,7 @@ def run_backtest(config):
             "twelvedata": load_twelve_data,
             "polygon": load_polygon_data,
             "yfinance": load_yfinance,
+            "metatrader": load_metatrader_data,
         }
         loader = loader_map.get(provider, load_twelve_data)
         df = load_or_fetch(

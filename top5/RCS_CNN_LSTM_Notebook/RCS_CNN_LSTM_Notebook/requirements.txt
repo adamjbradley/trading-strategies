@@ -7,3 +7,4 @@ tsfresh
 shap
 scikit-learn
 yfinance
+MetaTrader5
