@@ -1,0 +1,8 @@
+Symbol: GBPUSD
+Timestamp: 20250612_002645
+Test Accuracy: 0.5271
+Strategy Return: 0.0000
+Sharpe Ratio: 0.0000
+Total Trades: 0
+Features: 20
+Lookback Window: 20
