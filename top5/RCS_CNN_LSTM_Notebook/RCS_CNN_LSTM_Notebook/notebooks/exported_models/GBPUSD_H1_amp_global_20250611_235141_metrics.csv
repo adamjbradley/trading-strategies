@@ -1,0 +1,2 @@
+model_name,symbol,timestamp,accuracy,precision,recall,f1_score,cumulative_return,buy_hold_return
+GBPUSD_H1_amp_global_20250611_235141,GBPUSD,20250611_235141,0.528,0.528,1.0,0.6910994764397905,0.014570044530032522,0.01457004453002786
