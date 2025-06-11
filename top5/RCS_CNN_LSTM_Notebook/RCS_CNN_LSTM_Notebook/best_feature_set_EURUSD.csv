@@ -1,2 +1,0 @@
-Feature Set,Accuracy,Features
-Volatility Indicators,0.515625,"['atr', 'bbw', 'rolling_std_5']"

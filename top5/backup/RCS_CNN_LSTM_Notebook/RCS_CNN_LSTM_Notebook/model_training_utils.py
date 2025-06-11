@@ -87,6 +87,9 @@ def train_model_with_best_features(symbol, data, model_builder_func, n_features=
     if use_saved_features:
         # Try to load the best feature set from the saved file
         best_features = feature_set_utils.load_best_feature_set(symbol)
+        print(f"✅ Best features found for {symbol} : {best_features}")
+    else:
+        print(f"⚠️ Using feature importance ranking instead of saved features for {symbol}")
     
     # If no saved feature set is found or use_saved_features is False, use feature importance
     if not best_features:
