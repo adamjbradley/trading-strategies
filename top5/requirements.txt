@@ -1,0 +1,11 @@
+MetaTrader5
+matplotlib
+numpy
+onnxruntime
+pandas
+scikit-learn
+shap
+streamlit
+tsfresh
+yfinance
+MetaTrader5

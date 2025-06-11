@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3:*)",
+      "Bash(wget:*)",
+      "Bash(bash:*)",
+      "Bash(export:*)",
+      "Bash(conda:*)",
+      "Bash(/mnt/c/Users/user/Projects/Finance/Strategies/trading-strategies/top5/.conda/bin/python test_notebook_fixes.py)",
+      "Bash(sudo apt:*)",
+      "Bash(sudo apt install:*)",
+      "Bash(/home/adambradley/miniconda/bin/conda env create -f environment.yml)",
+      "Bash(source:*)",
+      "Bash(pip install:*)",
+      "Bash(python:*)",
+      "Bash(pip --version)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(rg:*)",
+      "Bash(cp:*)"
+    ],
+    "deny": []
+  }
+}

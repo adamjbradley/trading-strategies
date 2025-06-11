@@ -1,0 +1,2 @@
+threshold,stop_loss_pct,take_profit_pct,lookback,final_value,sharpe,max_drawdown,max_drawdown_len,total_trades,win_rate,avg_trade,avg_win,avg_loss
+0.3,0.05,0.09,20,9999.360429339984,-5683.94781839251,0.006428667424661092,4909,290,19.310344827586206,-0.0022099343944636703,0.001747249464285696,-0.0031610172103004293
