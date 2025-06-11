@@ -182,12 +182,44 @@ def train_model_with_best_features(symbol, data, model_builder_func, n_features=
         X_val = X_val.reshape(X_val.shape[0], 1, X_val.shape[1])
         X_test = X_test.reshape(X_test.shape[0], 1, X_test.shape[1])
     
-    # Build and train the model
+    # Build and train the model with improved regularization
+    print(f"🔧 Training with regularization parameters:")
+    print(f"  - Dropout rate: {kwargs.get('dropout_rate', 0.3)}")
+    print(f"  - L1 regularization: {kwargs.get('l1_reg', 0.01)}")
+    print(f"  - L2 regularization: {kwargs.get('l2_reg', 0.01)}")
+    print(f"  - Early stopping patience: {kwargs.get('patience', 10)}")
+    
     model = model_builder_func(X_train, y_train, X_val, y_val, **kwargs)
     
     # Evaluate the model to get accuracy
     metrics = evaluate_model(model, X_test, y_test)
     accuracy = metrics['accuracy']
+    
+    # Perform comprehensive validation if the model builder returns history
+    try:
+        from src.models.validation import comprehensive_model_evaluation, suggest_regularization_improvements
+        
+        # Get comprehensive evaluation
+        eval_results = comprehensive_model_evaluation(model, X_train, y_train, X_val, y_val, X_test, y_test)
+        
+        # Print validation summary
+        print(f"\n📊 Comprehensive Model Evaluation:")
+        print(f"  Training Accuracy: {eval_results['train_accuracy']:.4f}")
+        print(f"  Validation Accuracy: {eval_results['val_accuracy']:.4f}")
+        print(f"  Test Accuracy: {eval_results['test_accuracy']:.4f}")
+        print(f"  Train-Val Accuracy Gap: {eval_results['accuracy_gap_train_val']:.4f}")
+        print(f"  Train-Test Accuracy Gap: {eval_results['accuracy_gap_train_test']:.4f}")
+        
+        # Get and print suggestions
+        suggestions = suggest_regularization_improvements(eval_results)
+        if suggestions:
+            print(f"\n💡 Regularization Suggestions:")
+            for suggestion in suggestions:
+                print(suggestion)
+    except ImportError:
+        print("⚠️ Validation utilities not available, using basic evaluation")
+    except Exception as e:
+        print(f"⚠️ Validation analysis failed: {e}")
     
     # Create a descriptive name for the feature set
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -405,12 +437,43 @@ def train_model_with_random_features(symbol, data, model_builder_func, n_feature
         X_val = X_val.reshape(X_val.shape[0], 1, X_val.shape[1])
         X_test = X_test.reshape(X_test.shape[0], 1, X_test.shape[1])
     
-    # Build and train the model
+    # Build and train the model with improved regularization
+    print(f"🔧 Training with regularization parameters:")
+    print(f"  - Dropout rate: {kwargs.get('dropout_rate', 0.3)}")
+    print(f"  - L1 regularization: {kwargs.get('l1_reg', 0.01)}")
+    print(f"  - L2 regularization: {kwargs.get('l2_reg', 0.01)}")
+    print(f"  - Early stopping patience: {kwargs.get('patience', 10)}")
+    
     model = model_builder_func(X_train, y_train, X_val, y_val, **kwargs)
     
     # Evaluate the model to get accuracy
     metrics = evaluate_model(model, X_test, y_test)
     accuracy = metrics['accuracy']
+    
+    # Perform comprehensive validation for random features training too
+    try:
+        from src.models.validation import comprehensive_model_evaluation, suggest_regularization_improvements
+        
+        # Get comprehensive evaluation
+        eval_results = comprehensive_model_evaluation(model, X_train, y_train, X_val, y_val, X_test, y_test)
+        
+        # Print validation summary for random features
+        print(f"\n📊 Random Features Model Evaluation:")
+        print(f"  Training Accuracy: {eval_results['train_accuracy']:.4f}")
+        print(f"  Validation Accuracy: {eval_results['val_accuracy']:.4f}")
+        print(f"  Test Accuracy: {eval_results['test_accuracy']:.4f}")
+        print(f"  Train-Val Accuracy Gap: {eval_results['accuracy_gap_train_val']:.4f}")
+        
+        # Get and print suggestions
+        suggestions = suggest_regularization_improvements(eval_results)
+        if suggestions and len(suggestions) > 1:  # Only print if there are actual suggestions
+            print(f"\n💡 Regularization Suggestions:")
+            for suggestion in suggestions:
+                print(suggestion)
+    except ImportError:
+        print("⚠️ Validation utilities not available, using basic evaluation")
+    except Exception as e:
+        print(f"⚠️ Validation analysis failed: {e}")
     
     # Create a descriptive name for the feature set
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

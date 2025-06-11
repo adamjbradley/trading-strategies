@@ -220,8 +220,8 @@ def save_best_feature_set(best_row, symbol, filename=None):
     
     Parameters:
     -----------
-    best_row : pandas.Series
-        Series containing the best feature set
+    best_row : pandas.Series, pandas.DataFrame, list, or any
+        Series, DataFrame, list, or any object containing the best feature set
     symbol : str
         Trading symbol (e.g., 'EURUSD')
     filename : str, optional
@@ -231,7 +231,23 @@ def save_best_feature_set(best_row, symbol, filename=None):
         filename = f"best_feature_set_{symbol}.csv"
     
     file_path = get_feature_set_path(symbol, filename)
-    best_row.to_frame().T.to_csv(file_path, index=False)
+    
+    # Convert to DataFrame based on input type
+    if isinstance(best_row, pd.Series):
+        df = best_row.to_frame().T
+    elif isinstance(best_row, pd.DataFrame):
+        df = best_row
+    elif isinstance(best_row, list):
+        # Create a DataFrame with a Features column containing the list as a string
+        df = pd.DataFrame({'Features': [str(best_row)]})
+    else:
+        # Try to convert to string and save
+        try:
+            df = pd.DataFrame({'Features': [str(best_row)]})
+        except:
+            raise ValueError(f"Cannot convert {type(best_row)} to DataFrame")
+    
+    df.to_csv(file_path, index=False)
     print(f"✅ Saved best feature set to {file_path}")
 
 def append_to_best_feature_set(feature_set_name, accuracy, features, symbol, filename=None, max_entries=50):

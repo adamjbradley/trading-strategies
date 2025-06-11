@@ -17,7 +17,9 @@
       "Bash(ls:*)",
       "Bash(find:*)",
       "Bash(rg:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(grep:*)",
+      "Bash(.conda/python.exe -c \"import sys; print(sys.version)\")"
     ],
     "deny": []
   }

@@ -11,13 +11,18 @@ from sklearn.metrics import r2_score
 from ..data.loader import load_or_fetch
 # Import from model_training_utils instead of models.training  
 try:
-    from ..models.training import train_model_with_best_features, evaluate_model
-except ImportError:
-    # Fallback to root level import
+    # Try importing from the main model_training_utils module
     import sys
     import os
     sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
     from model_training_utils import train_model_with_best_features, evaluate_model
+except ImportError:
+    try:
+        # Fallback to relative import
+        from ..models.training import train_model_with_best_features, evaluate_model
+    except ImportError:
+        # Final fallback - direct import from models.training
+        from src.models.training import train_model_with_best_features, evaluate_model
 import src.features.selection
 from ..utils.shape_handler import ensure_compatible_input_shape
 from ..models.evaluation import save_model_with_metrics
@@ -50,9 +55,9 @@ else:
         "onnx_path", "h5_path", "timestamp"
     ])
 
-def build_cnn_lstm_model(X_train, y_train, X_val, y_val, epochs=50, batch_size=32):
+def build_cnn_lstm_model(X_train, y_train, X_val, y_val, epochs=50, batch_size=32, **kwargs):
     """
-    Build and train a CNN-LSTM model.
+    Build and train a CNN-LSTM model with improved regularization.
     
     Parameters:
     -----------
@@ -68,42 +73,19 @@ def build_cnn_lstm_model(X_train, y_train, X_val, y_val, epochs=50, batch_size=3
         Number of epochs to train
     batch_size : int, default=32
         Batch size for training
+    **kwargs : dict
+        Additional keyword arguments for regularization
         
     Returns:
     --------
     keras.Model
         Trained model
     """
-    # Get input shape
-    input_shape = X_train.shape[1:]
+    # Import the improved model builder
+    from ..models.cnn_lstm import build_cnn_lstm_model as improved_model_builder
     
-    # Build model
-    model = keras.Sequential([
-        layers.Input(shape=input_shape),
-        layers.Conv1D(filters=64, kernel_size=3, padding='same', activation='relu'),
-        layers.MaxPooling1D(pool_size=2),
-        layers.LSTM(50, return_sequences=False),
-        layers.Dense(20, activation='relu'),
-        layers.Dense(1, activation='sigmoid')
-    ])
-    
-    # Compile model
-    model.compile(
-        optimizer=keras.optimizers.Adam(learning_rate=0.001),
-        loss='binary_crossentropy',
-        metrics=['accuracy']
-    )
-    
-    # Train model
-    model.fit(
-        X_train, y_train,
-        epochs=epochs,
-        batch_size=batch_size,
-        validation_data=(X_val, y_val),
-        verbose=1
-    )
-    
-    return model
+    # Use the improved model builder with regularization
+    return improved_model_builder(X_train, y_train, X_val, y_val, epochs, batch_size, **kwargs)
 
 def process_symbol(symbol, timeframe="H1", broker="metatrader"):
     """
@@ -185,64 +167,61 @@ def process_symbol(symbol, timeframe="H1", broker="metatrader"):
     model.save(h5_path)
     print(f"  Saved H5 model to {h5_path}")
     
-    # Export to ONNX
+    # Export to ONNX with NumPy 2.0 compatibility
     onnx_path = os.path.join(EXPORT_DIR, f"{model_id}.onnx")
     
     try:
+        # Import the NumPy 2.0 compatible ONNX export function
+        from .onnx_numpy2_fix import export_model_to_onnx_numpy2_safe, ensure_numpy_compatibility
+        
         # Ensure input shape is compatible
         expected_shape = model.input_shape[1:]  # Remove batch dimension
         X_train_compatible = ensure_compatible_input_shape(X_train, expected_shape)
         
-        # Handle Sequential models differently
-        if isinstance(model, tf.keras.Sequential):
-            # Convert Sequential model to Functional model first
-            inputs = tf.keras.Input(shape=X_train_compatible.shape[1:], name="input")
-            outputs = model(inputs)
-            functional_model = tf.keras.Model(inputs=inputs, outputs=outputs, name="functional_model")
-            
-            # Add explicit output names
-            if not hasattr(functional_model, 'output_names') or not functional_model.output_names:
-                functional_model.output_names = ['output']
-            
-            # Use the Functional model for ONNX conversion
-            try:
-                # Try direct conversion first
-                spec = (tf.TensorSpec((None,) + X_train_compatible.shape[1:], tf.float32, name="input"),)
-                onnx_model, _ = tf2onnx.convert.from_keras(functional_model, input_signature=spec, opset=13)
-            except Exception as e:
-                print(f"⚠️ First ONNX conversion attempt failed: {e}")
-                print("Trying alternative conversion method...")
-                
-                # Try alternative conversion method
-                model_proto, _ = tf2onnx.convert.from_function(
-                    lambda x: functional_model(x),
-                    input_signature=[tf.TensorSpec((None,) + X_train_compatible.shape[1:], tf.float32, name="input")],
-                    opset=13
-                )
-                onnx_model = model_proto
-        else:
-            # For Functional models, use the standard approach
-            try:
-                spec = (tf.TensorSpec((None,) + X_train_compatible.shape[1:], tf.float32, name="input"),)
-                onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
-            except Exception as e:
-                print(f"⚠️ First ONNX conversion attempt failed: {e}")
-                print("Trying alternative conversion method...")
-                
-                # Try alternative conversion method
-                model_proto, _ = tf2onnx.convert.from_function(
-                    lambda x: model(x),
-                    input_signature=[tf.TensorSpec((None,) + X_train_compatible.shape[1:], tf.float32, name="input")],
-                    opset=13
-                )
-                onnx_model = model_proto
+        # Create test input for verification (small sample)
+        test_input = ensure_numpy_compatibility(X_train_compatible[:min(5, len(X_train_compatible))])
         
-        # Save the ONNX model
-        onnx.save(onnx_model, onnx_path)
-        print(f"  Saved ONNX model to {onnx_path}")
+        # Use the NumPy 2.0 compatible export function
+        export_success = export_model_to_onnx_numpy2_safe(
+            model=model,
+            output_path=onnx_path,
+            input_shape=X_train_compatible.shape[1:],
+            test_input=test_input,
+            model_name=f"{symbol}_CNN_LSTM"
+        )
+        
+        if export_success:
+            print(f"  ✅ ONNX model exported successfully to {onnx_path}")
+        else:
+            print(f"  ⚠️ ONNX export failed, but H5 model is available")
+            onnx_path = None  # Set to None to indicate ONNX export failed
+            
+    except ImportError as e:
+        print(f"⚠️ NumPy 2.0 compatible ONNX export not available: {e}")
+        print("  Falling back to standard ONNX export...")
+        
+        # Fallback to original ONNX export method
+        try:
+            # Ensure input shape is compatible
+            expected_shape = model.input_shape[1:]  # Remove batch dimension
+            X_train_compatible = ensure_compatible_input_shape(X_train, expected_shape)
+            
+            # Convert to ONNX using standard method
+            spec = (tf.TensorSpec((None,) + X_train_compatible.shape[1:], tf.float32, name="input"),)
+            onnx_model, _ = tf2onnx.convert.from_keras(model, input_signature=spec, opset=13)
+            
+            # Save the ONNX model
+            onnx.save(onnx_model, onnx_path)
+            print(f"  Saved ONNX model to {onnx_path}")
+        except Exception as fallback_e:
+            print(f"⚠️ Fallback ONNX export also failed: {fallback_e}")
+            print("  This error is non-critical. The model is still saved in HDF5 format.")
+            onnx_path = None
+            
     except Exception as e:
         print(f"⚠️ ONNX export failed: {e}")
         print("  This error is non-critical. The model is still saved in HDF5 format.")
+        onnx_path = None
     
     # Save metrics
     save_model_with_metrics(
@@ -258,7 +237,7 @@ def process_symbol(symbol, timeframe="H1", broker="metatrader"):
         }
     )
     
-    # Prepare metadata
+    # Prepare metadata (handle case where ONNX export failed)
     new_row = {
         "model_id": model_id,
         "symbol": symbol,
@@ -269,7 +248,7 @@ def process_symbol(symbol, timeframe="H1", broker="metatrader"):
         "metric": metrics["f1_score"],
         "cumulative_return": cumulative_return,
         "buy_hold_return": buy_hold_return,
-        "onnx_path": onnx_path,
+        "onnx_path": onnx_path if onnx_path else "",  # Empty string if ONNX export failed
         "h5_path": h5_path,
         "timestamp": timestamp
     }
@@ -294,8 +273,20 @@ def main():
             if len(combined) > TOP_N:
                 to_remove = combined.iloc[TOP_N:]
                 for _, row in to_remove.iterrows():
-                    if os.path.exists(row["onnx_path"]):
-                        os.remove(row["onnx_path"])
+                    # Clean up ONNX files if they exist
+                    if row["onnx_path"] and os.path.exists(row["onnx_path"]):
+                        try:
+                            os.remove(row["onnx_path"])
+                            print(f"  Removed old ONNX file: {row['onnx_path']}")
+                        except Exception as e:
+                            print(f"  ⚠️ Could not remove {row['onnx_path']}: {e}")
+                    # Clean up H5 files if they exist
+                    if row["h5_path"] and os.path.exists(row["h5_path"]):
+                        try:
+                            os.remove(row["h5_path"])
+                            print(f"  Removed old H5 file: {row['h5_path']}")
+                        except Exception as e:
+                            print(f"  ⚠️ Could not remove {row['h5_path']}: {e}")
                 combined = combined.iloc[:TOP_N]
             
             # Update CSV

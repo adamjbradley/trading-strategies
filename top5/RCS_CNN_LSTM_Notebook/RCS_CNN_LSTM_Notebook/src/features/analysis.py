@@ -152,7 +152,23 @@ def evaluate_and_save_feature_sets(feature_matrix, y, feature_sets, symbol_to_pr
     )
     best_row = results_df.sort_values(by='Accuracy', ascending=False).iloc[0]
     results_df.to_csv(f'feature_set_results_{symbol_to_predict}.csv', index=False)
-    best_row.to_frame().T.to_csv(f'best_feature_set_{symbol_to_predict}.csv', index=False)
+    
+    # Convert to DataFrame based on input type to handle different data types
+    if isinstance(best_row, pd.Series):
+        df = best_row.to_frame().T
+    elif isinstance(best_row, pd.DataFrame):
+        df = best_row
+    elif isinstance(best_row, list):
+        # Create a DataFrame with a Features column containing the list as a string
+        df = pd.DataFrame({'Features': [str(best_row)]})
+    else:
+        # Try to convert to string and save
+        try:
+            df = pd.DataFrame({'Features': [str(best_row)]})
+        except:
+            raise ValueError(f"Cannot convert {type(best_row)} to DataFrame")
+    
+    df.to_csv(f'best_feature_set_{symbol_to_predict}.csv', index=False)
     print(f"📁 Saved results to feature_set_results_{symbol_to_predict}.csv")
     print(f"🏆 Best set saved to best_feature_set_{symbol_to_predict}.csv")
     return results_df, best_row

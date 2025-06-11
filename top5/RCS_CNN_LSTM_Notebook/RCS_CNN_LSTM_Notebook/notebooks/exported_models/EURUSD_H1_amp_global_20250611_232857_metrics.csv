@@ -1,0 +1,2 @@
+model_name,symbol,timestamp,accuracy,precision,recall,f1_score,cumulative_return,buy_hold_return
+EURUSD_H1_amp_global_20250611_232857,EURUSD,20250611_232857,0.4826666666666667,0.0,0.0,0.0,0.0,0.0020240609145951716
