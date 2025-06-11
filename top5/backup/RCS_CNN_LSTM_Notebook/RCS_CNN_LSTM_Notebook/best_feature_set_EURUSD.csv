@@ -1,0 +1,2 @@
+Features
+"['day_of_week', '^gspc', 'macd', 'rolling_std_5', 'roc', 'stoch_d', 'momentum', 'dxy', 'stoch_k', 'cci', 'return_3d', 'atr', 'rolling_mean_5', 'gc=f', 'momentum_slope']"

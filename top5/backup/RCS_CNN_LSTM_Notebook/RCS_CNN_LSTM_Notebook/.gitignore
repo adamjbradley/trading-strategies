@@ -1,0 +1,5 @@
+# Ignore all PNG files (plots, figures)
+*.png
+comparison_plots/
+*.onnx
+*.h5
