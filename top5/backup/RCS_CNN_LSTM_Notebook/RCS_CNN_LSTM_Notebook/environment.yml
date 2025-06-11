@@ -1,0 +1,18 @@
+name: rcs_cnn_lstm_env
+channels:
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.10
+  - numpy
+  - pandas
+  - matplotlib
+  - scikit-learn
+  - tensorflow
+  - pip
+  - pip:
+      - MetaTrader5
+      - shap
+      - ta
+      - yfinance
+      - MetaTrader5

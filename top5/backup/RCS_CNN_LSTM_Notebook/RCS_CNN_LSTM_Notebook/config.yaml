@@ -1,0 +1,19 @@
+use_async: true
+symbol: "EUR/USD"
+provider: "twelvedata"
+interval: "1min"
+outputsize: 500
+start: "2023-01-01"
+end: "2023-12-31"
+
+api_keys:
+  twelvedata: "your_twelvedata_api_key"
+  polygon: "YOUR_POLYGON_API_KEY"  # or set POLYGON_API_KEY env var
+
+  alphavantage: "your_alpha_vantage_api_key"
+  currencystack: "your_currencystack_api_key"
+  tiingo: "your_tiingo_api_key"
+  metatrader: ""  # MetaTrader5 does not require an API key
+
+mlflow_enabled: true
+mlflow_experiment: RCS_Trading

@@ -1,0 +1,4 @@
+Feature Set,Accuracy,Features
+RCS + RSI + MACD,0.5023364485981309,"['rsi', 'macd']"
+Indicators only,0.4883177570093458,"['rsi', 'macd', 'momentum', 'cci']"
+All features,0.514018691588785,"['rsi', 'macd', 'momentum', 'cci', 'atr', 'adx', 'stoch_k', 'stoch_d', 'roc', 'bbw', 'return_1d', 'return_3d', 'rolling_mean_5', 'rolling_std_5', 'momentum_slope', 'dxy', '^vix', '^gspc', 'gc=f', 'cl=f', 'gold_oil_ratio', 'day_of_week', 'month']"
