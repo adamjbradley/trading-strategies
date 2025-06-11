@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 from datetime import datetime
 # Import the functions directly from the module
-import feature_set_utils
+from src.features.selection import load_best_feature_set, get_feature_importance_ranking, get_default_features, select_top_n_features, filter_available_features, append_to_best_feature_set
 
 def train_model_with_best_features(symbol, data, model_builder_func, n_features=15, use_saved_features=True, **kwargs):
     """
@@ -86,25 +86,25 @@ def train_model_with_best_features(symbol, data, model_builder_func, n_features=
     
     if use_saved_features:
         # Try to load the best feature set from the saved file
-        best_features = feature_set_utils.load_best_feature_set(symbol)
+        best_features = load_best_feature_set(symbol)
     
     # If no saved feature set is found or use_saved_features is False, use feature importance
     if not best_features:
         print(f"⚠️ No saved feature set found for {symbol}, using feature importance ranking")
         
         # Get the feature importance ranking
-        importance_df = feature_set_utils.get_feature_importance_ranking(symbol)
+        importance_df = get_feature_importance_ranking(symbol)
         
         # If no feature importance ranking is found, use default features
         if importance_df.empty:
             print(f"⚠️ No feature importance ranking found for {symbol}, using default features")
-            best_features = feature_set_utils.get_default_features()
+            best_features = get_default_features()
         else:
             # Select the top N features
-            best_features = feature_set_utils.select_top_n_features(importance_df, n=n_features)
+            best_features = select_top_n_features(importance_df, n=n_features)
     
     # Filter the features to only include those available in the data
-    available_features = feature_set_utils.filter_available_features(data, best_features)
+    available_features = filter_available_features(data, best_features)
     
     if not available_features:
         # If no features are available, use all numeric columns except target
@@ -194,7 +194,7 @@ def train_model_with_best_features(symbol, data, model_builder_func, n_features=
     feature_set_name = f"Best Features {timestamp}"
     
     # Add the result to the best_feature_set CSV file
-    feature_set_utils.append_to_best_feature_set(
+    append_to_best_feature_set(
         feature_set_name=feature_set_name,
         accuracy=accuracy,
         features=available_features,
@@ -418,7 +418,7 @@ def train_model_with_random_features(symbol, data, model_builder_func, n_feature
     
     # Add the result to the best_feature_set CSV file
     # Ensure we always add the result, regardless of accuracy
-    feature_set_utils.append_to_best_feature_set(
+    append_to_best_feature_set(
         feature_set_name=feature_set_name,
         accuracy=accuracy,
         features=selected_features,
@@ -558,7 +558,7 @@ def generate_feature_sets_from_random(symbol, data, model_builder_func, n_random
         feature_sets.append(feature_set)
         
         # Save this feature set
-        feature_set_utils.save_best_feature_set(
+        save_best_feature_set(
             feature_set,
             symbol=f"{symbol}_random_set_{i+1}",
             filename=f"best_feature_set_{symbol}_random_set_{i+1}.csv"
@@ -567,7 +567,7 @@ def generate_feature_sets_from_random(symbol, data, model_builder_func, n_random
         print(f"Feature Set {i+1}: {feature_set}")
     
     # Save the overall best feature set
-    feature_set_utils.save_best_feature_set(
+    save_best_feature_set(
         top_features,
         symbol=f"{symbol}_top_random",
         filename=f"best_feature_set_{symbol}_top_random.csv"
@@ -579,7 +579,7 @@ def generate_feature_sets_from_random(symbol, data, model_builder_func, n_random
     feature_set_name = f"Best Random Trial {timestamp}"
     
     # Add the best result to the best_feature_set CSV file
-    feature_set_utils.append_to_best_feature_set(
+    append_to_best_feature_set(
         feature_set_name=feature_set_name,
         accuracy=best_accuracy,
         features=best_features,

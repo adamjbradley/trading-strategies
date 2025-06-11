@@ -1,0 +1,13 @@
+numpy
+pandas
+scikit-learn
+tensorflow
+matplotlib
+seaborn
+ta
+yfinance
+metatrader5
+tf2onnx
+onnx
+shap
+mlflow
