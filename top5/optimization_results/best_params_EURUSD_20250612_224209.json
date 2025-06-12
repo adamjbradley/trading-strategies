@@ -1,0 +1,26 @@
+{
+  "symbol": "EURUSD",
+  "timestamp": "20250612_224209",
+  "objective_value": 0.7833834779594125,
+  "mean_accuracy": 0.7050451301634713,
+  "mean_sharpe": 0.940060173551295,
+  "num_features": 16,
+  "total_trials": 15,
+  "completed_trials": 15,
+  "best_params": {
+    "lookback_window": 42,
+    "max_features": 16,
+    "conv1d_filters_1": 128,
+    "conv1d_filters_2": 48,
+    "conv1d_kernel_size": 5,
+    "lstm_units": 80,
+    "dense_units": 15,
+    "dropout_rate": 0.49622282957179187,
+    "l1_reg": 0.0009095595449996398,
+    "l2_reg": 0.00036913306959245057,
+    "learning_rate": 0.0023686574806450296,
+    "batch_size": 64,
+    "epochs": 200,
+    "patience": 15
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "symbol": "GBPUSD",
+  "timestamp": "20250612_224212",
+  "objective_value": 0.7493519987852018,
+  "mean_accuracy": 0.6744167989066816,
+  "mean_sharpe": 0.8992223985422421,
+  "num_features": 34,
+  "total_trials": 15,
+  "completed_trials": 15,
+  "best_params": {
+    "lookback_window": 41,
+    "max_features": 34,
+    "conv1d_filters_1": 80,
+    "conv1d_filters_2": 32,
+    "conv1d_kernel_size": 3,
+    "lstm_units": 45,
+    "dense_units": 30,
+    "dropout_rate": 0.3561711433906497,
+    "l1_reg": 9.150158795735537e-06,
+    "l2_reg": 1.2648593653331417e-05,
+    "learning_rate": 0.00037328592333704766,
+    "batch_size": 128,
+    "epochs": 156,
+    "patience": 16
+  }
+}

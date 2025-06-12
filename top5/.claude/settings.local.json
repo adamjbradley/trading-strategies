@@ -19,7 +19,8 @@
       "Bash(rg:*)",
       "Bash(cp:*)",
       "Bash(grep:*)",
-      "Bash(.conda/python.exe -c \"import sys; print(sys.version)\")"
+      "Bash(.conda/python.exe -c \"import sys; print(sys.version)\")",
+      "mcp__ide__executeCode"
     ],
     "deny": []
   }
