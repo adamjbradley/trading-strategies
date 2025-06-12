@@ -1,2 +1,2 @@
 Feature Set,Accuracy,Features
-Volatility Indicators,0.515625,"['atr', 'bbw', 'rolling_std_5']"
+Trend Indicators,0.5165496489468405,"['adx', 'rolling_mean_5', 'macd']"
