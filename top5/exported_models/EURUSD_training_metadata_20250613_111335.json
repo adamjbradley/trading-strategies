@@ -1,0 +1,59 @@
+{
+  "symbol": "EURUSD",
+  "timestamp": "20250613_111335",
+  "hyperparameters": {
+    "lookback_window": 59,
+    "max_features": 36,
+    "feature_selection_method": "top_correlation",
+    "scaler_type": "robust",
+    "conv1d_filters_1": 32,
+    "conv1d_filters_2": 48,
+    "conv1d_kernel_size": 3,
+    "lstm_units": 90,
+    "lstm_return_sequences": false,
+    "dense_units": 50,
+    "num_dense_layers": 1,
+    "dropout_rate": 0.17674365188647667,
+    "l1_reg": 1.7892993778006708e-05,
+    "l2_reg": 7.191188870225294e-06,
+    "batch_normalization": true,
+    "optimizer": "adam",
+    "learning_rate": 0.0037918365964470895,
+    "batch_size": 64,
+    "epochs": 154,
+    "patience": 15,
+    "reduce_lr_patience": 4,
+    "confidence_threshold_high": 0.6608484485919075,
+    "confidence_threshold_low": 0.3049512863264476,
+    "signal_smoothing": true,
+    "use_rcs_features": true,
+    "use_cross_pair_features": false
+  },
+  "selected_features": [
+    "close",
+    "returns",
+    "high_low_pct",
+    "sma_10",
+    "price_to_sma_10",
+    "sma_20",
+    "price_to_sma_20",
+    "rsi_14",
+    "volatility_10",
+    "momentum_5"
+  ],
+  "num_features": 10,
+  "lookback_window": 30,
+  "input_shape": [
+    30,
+    10
+  ],
+  "model_architecture": "CNN-LSTM",
+  "framework": "tensorflow/keras",
+  "scaler_type": "RobustScaler",
+  "phase_1_features": {
+    "atr_volatility": true,
+    "multi_timeframe_rsi": true,
+    "session_based": true,
+    "cross_pair_correlations": true
+  }
+}
