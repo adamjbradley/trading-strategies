@@ -1,0 +1,22 @@
+{
+  "symbol": "TEST",
+  "timestamp": "20250613_154313",
+  "hyperparameters": {
+    "learning_rate": 0.001,
+    "dropout_rate": 0.2,
+    "lstm_units": 50
+  },
+  "selected_features": [
+    "feature_0",
+    "feature_1",
+    "feature_2"
+  ],
+  "num_features": 3,
+  "lookback_window": 10,
+  "input_shape": [
+    10,
+    3
+  ],
+  "model_architecture": "CNN-LSTM",
+  "framework": "tensorflow/keras"
+}
