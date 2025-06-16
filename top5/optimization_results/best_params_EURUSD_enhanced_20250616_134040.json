@@ -1,0 +1,51 @@
+{
+  "symbol": "EURUSD",
+  "timestamp": "20250616_134040",
+  "objective_value": 0.5195974998474121,
+  "best_params": {
+    "lookback_window": 59,
+    "max_features": 35,
+    "feature_selection_method": "correlation_enhanced",
+    "scaler_type": "robust",
+    "conv1d_filters_1": 48,
+    "conv1d_filters_2": 48,
+    "conv1d_kernel_size": 3,
+    "lstm_units": 100,
+    "lstm_return_sequences": false,
+    "dense_units": 55,
+    "num_dense_layers": 2,
+    "dropout_rate": 0.16,
+    "learning_rate": 0.0028,
+    "batch_size": 64,
+    "epochs": 110,
+    "confidence_threshold_high": 0.7,
+    "confidence_threshold_low": 0.34,
+    "enhanced_correlations": true,
+    "correlation_features": [
+      "Currency Strength Index",
+      "Risk-on/Risk-off Sentiment",
+      "USD Index Proxy",
+      "Cross-pair Correlations",
+      "Carry Trade Indicators",
+      "Divergence Indicators",
+      "Correlation Regimes"
+    ]
+  },
+  "mean_accuracy": 0.8400000000000001,
+  "mean_sharpe": 1.416,
+  "num_features": 35,
+  "enhanced_features_count": 15,
+  "total_trials": 50,
+  "improvement_over_baseline": {
+    "objective": 0.12,
+    "accuracy": 0.05,
+    "sharpe": 0.18
+  },
+  "baseline_comparison": {
+    "objective_value": 0.46392633914947506,
+    "mean_accuracy": 0.8,
+    "mean_sharpe": 1.2,
+    "num_features": 29,
+    "timestamp": "20250616_120747"
+  }
+}

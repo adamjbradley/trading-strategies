@@ -129,17 +129,36 @@ def select_top_n_features(importance_df, n=15):
 
 def get_default_features():
     """
-    Get a default set of features.
+    Get a default set of features with forex-specific enhancements.
     
     Returns:
     --------
     list
-        List of default feature names
+        List of default feature names including forex-specific features
     """
     return [
+        # Technical Indicators
         'rsi', 'macd', 'momentum', 'cci', 'atr', 'adx', 'stoch_k', 'stoch_d',
-        'roc', 'bbw', 'return_1d', 'return_3d', 'rolling_mean_5', 'rolling_std_5',
-        'momentum_slope'
+        'roc', 'bbw',
+        
+        # Price Features
+        'return_1d', 'return_3d', 'rolling_mean_5', 'rolling_std_5', 'momentum_slope',
+        
+        # Forex-Specific Trading Session Features
+        'asian_session', 'london_session', 'ny_session', 'session_overlap', 
+        'session_volatility_ratio',
+        
+        # Currency Strength & Correlation Features
+        'eur_strength_proxy', 'eur_strength_trend', 'usd_strength_impact',
+        
+        # Advanced Volatility Features
+        'volatility_regime', 'volatility_persistence',
+        
+        # Market Structure Features  
+        'range_ratio', 'close_position', 'risk_sentiment',
+        
+        # Time-based Features
+        'hour', 'is_friday', 'is_monday'
     ]
 
 def filter_available_features(data, feature_list):

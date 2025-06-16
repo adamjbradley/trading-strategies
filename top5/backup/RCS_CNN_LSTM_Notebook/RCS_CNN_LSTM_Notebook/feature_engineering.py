@@ -66,10 +66,69 @@ def engineer_features(prices, symbol="EURUSD"):
     else:
         data['gold_oil_ratio'] = 0.0
 
-    # Time Features
+    # Forex-Specific Time Features
     data['day_of_week'] = data.index.dayofweek
     data['month'] = data.index.month
-
+    data['hour'] = data.index.hour
+    
+    # Trading Session Features (UTC times)
+    # Asian Session: 23:00-08:00 UTC
+    # London Session: 08:00-17:00 UTC  
+    # NY Session: 13:00-22:00 UTC
+    asian_session = ((data.index.hour >= 23) | (data.index.hour < 8))
+    london_session = ((data.index.hour >= 8) & (data.index.hour < 17))
+    ny_session = ((data.index.hour >= 13) & (data.index.hour < 22))
+    
+    data['asian_session'] = asian_session.astype(int)
+    data['london_session'] = london_session.astype(int)
+    data['ny_session'] = ny_session.astype(int)
+    data['session_overlap'] = ((london_session & ny_session).astype(int))
+    
+    # Session-based volatility (use 20-period rolling ATR as baseline)
+    atr_baseline = data['atr'].rolling(20).mean()
+    data['session_volatility_ratio'] = data['atr'] / atr_baseline
+    
+    # Currency Correlation Features (if EURUSD)
+    if symbol == "EURUSD":
+        # Correlation with major EUR pairs - approximate using price momentum
+        eur_momentum = data['return_1d']
+        data['eur_strength_proxy'] = eur_momentum.rolling(5).mean()
+        data['eur_strength_trend'] = data['eur_strength_proxy'].diff(3)
+    
+    # USD Index proxy (inverted for non-USD base currencies)
+    if 'dxy' in data.columns and data['dxy'].sum() != 0:
+        dxy_momentum = data['dxy'].pct_change(1)
+        if symbol.endswith('USD'):  # USD is quote currency
+            data['usd_strength_impact'] = -dxy_momentum  # Inverse relationship
+        elif symbol.startswith('USD'):  # USD is base currency
+            data['usd_strength_impact'] = dxy_momentum   # Direct relationship
+        else:
+            data['usd_strength_impact'] = 0
+    else:
+        data['usd_strength_impact'] = 0
+    
+    # Volatility clustering features
+    data['volatility_regime'] = (data['atr'] > data['atr'].rolling(50).quantile(0.8)).astype(int)
+    data['volatility_persistence'] = data['atr'].rolling(10).corr(data['atr'].shift(1))
+    
+    # Interest rate proxy using gold/bond relationship
+    if 'gc=f' in data.columns and data['gc=f'].sum() != 0:
+        gold_momentum = data['gc=f'].pct_change(5)
+        # Gold often inversely correlated with real rates
+        data['risk_sentiment'] = gold_momentum.rolling(10).mean()
+    else:
+        data['risk_sentiment'] = 0
+    
+    # Market structure features
+    data['range_ratio'] = ((ohlc[(symbol, "high")] - ohlc[(symbol, "low")]) / 
+                          ohlc[(symbol, "close")]).reindex(data.index)
+    data['close_position'] = ((ohlc[(symbol, "close")] - ohlc[(symbol, "low")]) / 
+                             (ohlc[(symbol, "high")] - ohlc[(symbol, "low")])).reindex(data.index)
+    
+    # Weekend effect (Friday close to Monday open gaps)
+    data['is_friday'] = (data.index.dayofweek == 4).astype(int)
+    data['is_monday'] = (data.index.dayofweek == 0).astype(int)
+    
     # Drop initial NaNs from rolling/indicator calculations
     features = data.dropna()
     return features

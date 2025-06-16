@@ -16,6 +16,7 @@ models/
 
 # Compiled binaries
 *.ex5
+*.onnx
 =======
 # Ignore archive files
 *.zip
@@ -63,3 +64,5 @@ top5/RCS_CNN_LSTM_Notebook/RCS_CNN_LSTM_Notebook/venv/bin/python3
 top5/RCS_CNN_LSTM_Notebook/RCS_CNN_LSTM_Notebook/venv/bin/python3.12
 top5/RCS_CNN_LSTM_Notebook/RCS_CNN_LSTM_Notebook/=2.8.0
 top5/RCS_CNN_LSTM_Notebook/RCS_CNN_LSTM_Notebook/venv/lib64
+top5/backup/ONNXStrategy_lookback-20,commission-0_0001_.html
+top5/exported_models/EURUSD_CNN_LSTM_20250613_174022.onnx
