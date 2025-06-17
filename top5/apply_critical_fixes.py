@@ -38,9 +38,9 @@ class CriticalFixes:
         try:
             # Core metrics
             accuracy = accuracy_score(y_true, y_pred)
-            precision = precision_score(y_true, y_pred, average='binary', zero_division=0.5)
-            recall = recall_score(y_true, y_pred, average='binary', zero_division=0.5)
-            f1 = f1_score(y_true, y_pred, average='binary', zero_division=0.5)
+            precision = precision_score(y_true, y_pred, average='binary', zero_division=0)
+            recall = recall_score(y_true, y_pred, average='binary', zero_division=0)
+            f1 = f1_score(y_true, y_pred, average='binary', zero_division=0)
             
             # Prediction quality metrics
             if len(y_prob) > 1:

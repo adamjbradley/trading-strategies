@@ -244,6 +244,7 @@ class FixedHyperparameterOptimizer:
         
         # Convert to binary classification (0=sell/hold, 1=buy)
         binary_targets = (targets == 1).astype(int)
+        binary_targets.name = 'target'  # Give the series a name
         
         # Ensure balanced classes (important for good training)
         class_counts = binary_targets.value_counts()
@@ -322,9 +323,9 @@ class FixedHyperparameterOptimizer:
             accuracy = accuracy_score(y_true, y_pred)
             
             # Precision and recall for balance
-            precision = precision_score(y_true, y_pred, average='binary', zero_division=0.5)
-            recall = recall_score(y_true, y_pred, average='binary', zero_division=0.5)
-            f1 = f1_score(y_true, y_pred, average='binary', zero_division=0.5)
+            precision = precision_score(y_true, y_pred, average='binary', zero_division=0)
+            recall = recall_score(y_true, y_pred, average='binary', zero_division=0)
+            f1 = f1_score(y_true, y_pred, average='binary', zero_division=0)
             
             # Sharpe-like ratio for prediction confidence
             if len(y_prob) > 1:
