@@ -1,0 +1,56 @@
+{
+  "timestamp": "20250617_004827",
+  "successful_symbols": [
+    "EURUSD",
+    "GBPUSD",
+    "USDJPY",
+    "AUDUSD",
+    "USDCAD",
+    "EURJPY"
+  ],
+  "failed_symbols": [],
+  "results": {
+    "EURUSD": {
+      "objective_value": 0.47102615694164995,
+      "completed_trials": 50,
+      "total_trials": 50,
+      "training_time": 2495.1084525585175,
+      "timestamp": "20250616_203910"
+    },
+    "GBPUSD": {
+      "objective_value": 0.45901309164149046,
+      "completed_trials": 50,
+      "total_trials": 50,
+      "training_time": 2477.8296480178833,
+      "timestamp": "20250616_212028"
+    },
+    "USDJPY": {
+      "objective_value": 0.4406847935548842,
+      "completed_trials": 50,
+      "total_trials": 50,
+      "training_time": 2558.6411621570587,
+      "timestamp": "20250616_220307"
+    },
+    "AUDUSD": {
+      "objective_value": 0.4481927710843374,
+      "completed_trials": 50,
+      "total_trials": 50,
+      "training_time": 2944.1386229991913,
+      "timestamp": "20250616_225211"
+    },
+    "USDCAD": {
+      "objective_value": 0.44287158746208294,
+      "completed_trials": 50,
+      "total_trials": 50,
+      "training_time": 2681.3775265216827,
+      "timestamp": "20250616_233652"
+    },
+    "EURJPY": {
+      "objective_value": 0.44651162790697674,
+      "completed_trials": 50,
+      "total_trials": 50,
+      "training_time": 4295.223863840103,
+      "timestamp": "20250617_004827"
+    }
+  }
+}
