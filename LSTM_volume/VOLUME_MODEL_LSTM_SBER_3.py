@@ -95,7 +95,7 @@ class VolumeAnalyzer:
             self.logger.debug(f"Traceback: {traceback.format_exc()}")
             return False
 
-    def get_mt5_data(self, symbol, timeframe, start_date, end_date):
+    def get_mt5_data(self, symbol, timeframe, start_date, end_date, asset_class="forex"):
         try:
             self.logger.info(f"Requesting MT5 data: {symbol}, {timeframe}, {start_date} - {end_date}")
             rates = mt5.copy_rates_range(symbol, timeframe, start_date, end_date)
@@ -110,6 +110,10 @@ class VolumeAnalyzer:
             required_columns = ['time', 'open', 'high', 'low', 'close', 'tick_volume', 'spread', 'real_volume']
             missing_columns = [col for col in required_columns if col not in df.columns]
             
+            if asset_class == "forex":
+                df['real_volume'] = df['tick_volume']
+            
+
             if missing_columns:
                 self.logger.warning(f"Missing columns: {missing_columns}")
             
@@ -451,14 +455,16 @@ def main():
         if not analyzer.setup_environment():
             return False
         
+        asset_class = "forex"  # Set asset class, can be "forex", "stocks", etc.
+
         # Analysis parameters
-        symbol = "GOOG"
+        symbol = "AUDJPY"
         timeframe = mt5.TIMEFRAME_H1
         start_date = pd.Timestamp.now() - pd.Timedelta(days=365)
         end_date = pd.Timestamp.now()
         
         # Get and process data
-        df = analyzer.get_mt5_data(symbol, timeframe, start_date, end_date)
+        df = analyzer.get_mt5_data(symbol, timeframe, start_date, end_date, asset_class=asset_class)
         if df is None:
             return False
             
